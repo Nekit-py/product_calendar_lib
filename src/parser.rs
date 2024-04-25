@@ -2,7 +2,7 @@ use crate::day::{Day, DayKind};
 use chrono::{Datelike, NaiveDate};
 use reqwest::Error;
 use scraper::{ElementRef, Html, Selector};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct ProductCalendarParser {

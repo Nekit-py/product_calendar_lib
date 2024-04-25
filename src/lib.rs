@@ -4,8 +4,6 @@ use day::{Day, DayKind};
 use parser::ProductCalendarParser;
 use thiserror::Error;
 
-use std::collections::HashSet;
-
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
 
 #[derive(Error, Debug)]
@@ -45,12 +43,9 @@ impl ProductCalendar {
     }
 
     fn merge(&mut self, consultant_data: &mut Vec<Day>) {
-        // self.calendar.extend(
-        //     consultant_data
-        //         .drain(..)
-        //         .filter(|d| !self.calendar.contains(d)),
-        // );
-        todo!();
+        self.calendar.retain_mut(|d| !consultant_data.contains(d));
+        self.calendar.extend(consultant_data.drain(..));
+        self.calendar.sort_by_key(|d| d.day);
     }
 }
 
@@ -68,7 +63,9 @@ fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
     Ok(cur_year)
 }
 
-async fn get_product_calendar(year: Option<u16>) -> Result<(), Box<dyn std::error::Error>> {
+async fn get_product_calendar(
+    year: Option<u16>,
+) -> Result<ProductCalendar, Box<dyn std::error::Error>> {
     let year = validate_year(year)?;
 
     let mut parser = ProductCalendarParser::new(year);
@@ -76,9 +73,7 @@ async fn get_product_calendar(year: Option<u16>) -> Result<(), Box<dyn std::erro
 
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut conulstant_data);
-    println!("{:#?}", &prod_cal.calendar[..30]);
-    println!("{:#?}", prod_cal.calendar.len());
-    Ok(())
+    Ok(prod_cal)
 }
 
 // cargo test -- --nocapture
@@ -86,29 +81,29 @@ async fn get_product_calendar(year: Option<u16>) -> Result<(), Box<dyn std::erro
 mod tests {
     use super::*;
 
-    #[test] 
+    #[test]
     fn test_eq() {
-        let d1 = Day{
+        let d1 = Day {
             weekday: Weekday::Mon,
             day: NaiveDate::default(),
-            kind: DayKind::Work
+            kind: DayKind::Work,
         };
 
-        let d2 = Day{
+        let d2 = Day {
             weekday: Weekday::Sun,
             day: NaiveDate::default(),
-            kind: DayKind::Work
+            kind: DayKind::Work,
         };
 
         assert_eq!(d1, d2);
     }
 
-    // #[tokio::test]
-    // async fn test_get_product_calendar() {
-    //     let year = Some(2024);
-    //     match get_product_calendar(year).await {
-    //         Ok(_) => println!("Тест прошел успешно."),
-    //         Err(e) => println!("Тест не прошел: {:?}", e),
-    //     }
-    // }
+    #[tokio::test]
+    async fn test_get_product_calendar() {
+        let year = Some(2024);
+        match get_product_calendar(year).await {
+            Ok(_) => println!("Тест прошел успешно."),
+            Err(e) => println!("Тест не прошел: {:?}", e),
+        }
+    }
 }
