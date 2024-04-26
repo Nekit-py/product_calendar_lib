@@ -28,3 +28,25 @@ impl Hash for Day {
         self.day.hash(state);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_eq() {
+        let d1 = Day {
+            weekday: Weekday::Mon,
+            day: NaiveDate::default(),
+            kind: DayKind::Work,
+        };
+
+        let d2 = Day {
+            weekday: Weekday::Sun,
+            day: NaiveDate::default(),
+            kind: DayKind::Work,
+        };
+
+        assert_eq!(d1, d2);
+    }
+}

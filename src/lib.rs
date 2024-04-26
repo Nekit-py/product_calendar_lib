@@ -2,6 +2,7 @@ pub mod day;
 pub mod parser;
 use day::{Day, DayKind};
 use parser::ProductCalendarParser;
+use std::ops::Index;
 use thiserror::Error;
 
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
@@ -16,6 +17,32 @@ pub enum InvalidYearError {
 
 pub struct ProductCalendar {
     calendar: Vec<Day>,
+}
+
+impl Index<usize> for ProductCalendar {
+    type Output = Day;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.calendar[index]
+    }
+}
+
+impl IntoIterator for ProductCalendar {
+    type Item = Day;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.calendar.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a ProductCalendar {
+    type Item = &'a Day;
+    type IntoIter = std::slice::Iter<'a, Day>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.calendar.iter()
+    }
 }
 
 impl ProductCalendar {
@@ -77,34 +104,15 @@ pub async fn get_product_calendar(
     Ok(prod_cal)
 }
 
-// cargo test -- --nocapture
-#[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_eq() {
-        let d1 = Day {
-            weekday: Weekday::Mon,
-            day: NaiveDate::default(),
-            kind: DayKind::Work,
-        };
-
-        let d2 = Day {
-            weekday: Weekday::Sun,
-            day: NaiveDate::default(),
-            kind: DayKind::Work,
-        };
-
-        assert_eq!(d1, d2);
-    }
 
     #[tokio::test]
     async fn test_get_product_calendar() {
         let year = Some(2024);
         match get_product_calendar(year).await {
             Ok(pc) => assert_eq!(
-                pc.calendar[0],
+                pc[0],
                 Day {
                     weekday: Weekday::Mon,
                     day: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),

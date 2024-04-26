@@ -97,9 +97,12 @@ impl ProductCalendarParser {
                 let work_in_weekend =
                     self.collect_days(table, &work, month_number, DayKind::Work, "\u{a0}");
 
-                calendar.extend(holidays);
-                calendar.extend(preholidays);
-                calendar.extend(work_in_weekend);
+                calendar.extend(
+                    holidays
+                        .into_iter()
+                        .chain(preholidays)
+                        .chain(work_in_weekend),
+                );
             }
         }
         Ok(calendar)
