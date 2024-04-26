@@ -1,5 +1,5 @@
 pub mod day;
-mod parser;
+pub mod parser;
 use day::{Day, DayKind};
 use parser::ProductCalendarParser;
 use thiserror::Error;
@@ -7,7 +7,7 @@ use thiserror::Error;
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
 
 #[derive(Error, Debug)]
-enum InvalidYearError {
+pub enum InvalidYearError {
     #[error("Год не может быть установлен ранее 2015")]
     TooYearly,
     #[error("Год не может быть установлен позже текущего.")]
@@ -44,12 +44,12 @@ impl ProductCalendar {
 
     fn merge(&mut self, consultant_data: &mut Vec<Day>) {
         self.calendar.retain_mut(|d| !consultant_data.contains(d));
-        self.calendar.extend(consultant_data.drain(..));
+        self.calendar.append(consultant_data);
         self.calendar.sort_by_key(|d| d.day);
     }
 }
 
-fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
+pub fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
     let cur_year = chrono::Local::now().year() as u16;
     if let Some(y) = year {
         //Производсвтенный календарь в консультанте ведется с 2015 года
@@ -63,7 +63,7 @@ fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
     Ok(cur_year)
 }
 
-async fn get_product_calendar(
+pub async fn get_product_calendar(
     year: Option<u16>,
 ) -> Result<ProductCalendar, Box<dyn std::error::Error>> {
     let year = validate_year(year)?;
@@ -73,6 +73,7 @@ async fn get_product_calendar(
 
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut conulstant_data);
+    println!("{:?}", prod_cal.calendar[0]);
     Ok(prod_cal)
 }
 
@@ -102,7 +103,14 @@ mod tests {
     async fn test_get_product_calendar() {
         let year = Some(2024);
         match get_product_calendar(year).await {
-            Ok(_) => println!("Тест прошел успешно."),
+            Ok(pc) => assert_eq!(
+                pc.calendar[0],
+                Day {
+                    weekday: Weekday::Mon,
+                    day: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                    kind: DayKind::Holiday
+                }
+            ),
             Err(e) => println!("Тест не прошел: {:?}", e),
         }
     }

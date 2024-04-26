@@ -4,41 +4,44 @@ use reqwest::Error;
 use scraper::{ElementRef, Html, Selector};
 use std::collections::HashMap;
 
+const URL: &str = "https://www.consultant.ru/law/ref/calendar/proizvodstvennye";
+const MONTHS: [&str; 12] = [
+    "Январь",
+    "Февраль",
+    "Март",
+    "Апрель",
+    "Май",
+    "Июнь",
+    "Июль",
+    "Август",
+    "Сентябрь",
+    "Октябрь",
+    "Ноябрь",
+    "Декабрь",
+];
+
 #[derive(Debug)]
 pub struct ProductCalendarParser {
-    _months: HashMap<&'static str, u8>,
+    months: HashMap<&'static str, u8>,
     pub year: u16,
-    _url: String,
+    url: String,
 }
 
 impl ProductCalendarParser {
-    const _URL: &'static str = "https://www.consultant.ru/law/ref/calendar/proizvodstvennye";
-    const _MONTHS: [(&'static str, u8); 12] = [
-        ("Январь", 1),
-        ("Февраль", 2),
-        ("Март", 3),
-        ("Апрель", 4),
-        ("Май", 5),
-        ("Июнь", 6),
-        ("Июль", 7),
-        ("Август", 8),
-        ("Сентябрь", 9),
-        ("Октябрь", 10),
-        ("Ноябрь", 11),
-        ("Декабрь", 12),
-    ];
-
     pub fn new(year: u16) -> ProductCalendarParser {
-        let _months: HashMap<&'static str, u8> =
-            ProductCalendarParser::_MONTHS.iter().cloned().collect();
+        let months: HashMap<&'static str, u8> = MONTHS
+            .iter()
+            .enumerate()
+            .map(|(i, &m)| (m, i as u8 + 1))
+            .collect();
 
         Self {
-            _months,
+            months,
             year,
-            _url: format!("{}/{}", Self::_URL, year),
+            url: format!("{}/{}", URL, year),
         }
     }
-    fn _collect_days(
+    fn collect_days(
         &self,
         table: ElementRef,
         selector: &Selector,
@@ -50,7 +53,7 @@ impl ProductCalendarParser {
             .select(selector)
             .map(|e| {
                 let day_text = e.text().next().unwrap();
-                let date = self._to_date(day_text.replace(replace_chars, ""), month_number);
+                let date = self.to_date(day_text.replace(replace_chars, ""), month_number);
                 Day {
                     weekday: date.weekday(),
                     day: date,
@@ -61,8 +64,7 @@ impl ProductCalendarParser {
     }
 
     pub async fn parse_calendar(&mut self) -> Result<Vec<Day>, Error> {
-        // pub async fn parse_calendar(&self) -> Result<HashSet<Day>, Error> {
-        let resp = reqwest::get(&self._url).await?;
+        let resp = reqwest::get(&self.url).await?;
         let body = resp.text().await?;
         let document = Html::parse_document(&body);
 
@@ -76,16 +78,16 @@ impl ProductCalendarParser {
         for table in document.select(&Selector::parse("table").unwrap()) {
             if let Some(month_element) = table.select(&month_selector).next() {
                 let month_name = month_element.text().collect::<String>();
-                let month_number = *self._months.get(month_name.as_str()).unwrap_or(&0);
+                let month_number = *self.months.get(month_name.as_str()).unwrap_or(&0_u8);
 
-                let holidays = self._collect_days(
+                let holidays = self.collect_days(
                     table,
                     &holiday_selector,
                     month_number,
                     DayKind::Holiday,
                     "\u{a0}",
                 );
-                let preholidays = self._collect_days(
+                let preholidays = self.collect_days(
                     table,
                     &preholiday_selector,
                     month_number,
@@ -93,18 +95,17 @@ impl ProductCalendarParser {
                     "*\u{a0}",
                 );
                 let work_in_weekend =
-                    self._collect_days(table, &work, month_number, DayKind::Work, "\u{a0}");
+                    self.collect_days(table, &work, month_number, DayKind::Work, "\u{a0}");
 
                 calendar.extend(holidays);
                 calendar.extend(preholidays);
                 calendar.extend(work_in_weekend);
             }
         }
-        // Ok(HashSet::from_iter(calendar))
         Ok(calendar)
     }
 
-    fn _to_date(&self, day: String, month: u8) -> NaiveDate {
+    fn to_date(&self, day: String, month: u8) -> NaiveDate {
         NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse::<u32>().unwrap())
             .expect("Не удалось разобрать дату...")
     }
