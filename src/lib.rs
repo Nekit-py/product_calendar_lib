@@ -107,7 +107,10 @@ impl ProductCalendar {
     //Возвращает экземпляр с периодом от указанной даты
     //до указанная дата + кол-во дней ключительно
     pub fn period_by_by_number_of_days(self, date: NaiveDate, days: usize) -> Self {
-        let start_idx = self.iter().position(|d| d.day == date).expect("Данной даты нет в этому году");
+        let start_idx = self
+            .iter()
+            .position(|d| d.day == date)
+            .expect("Данной даты нет в этому году");
         let end_idx = start_idx + days;
         if end_idx > self.calendar.len() {
             panic!("Запрашиваемый период выходит за пределы календаря");
@@ -121,8 +124,11 @@ impl ProductCalendar {
     }
 
     pub fn period_slice(self, start: NaiveDate, end: NaiveDate) -> Self {
-        let start_idx = self.iter().position(|d| d.day == start).expect("Данной даты нет в этому году");
-        let end_idx = self.iter().position(|d| d.day == end).expect("Данной даты нет в этому году");
+        let start_idx = self
+            .iter()
+            .position(|d| d.day == start)
+            .expect("Данной даты нет в этому году");
+        let end_idx = (start - end).num_days() as usize;
         if end_idx > self.calendar.len() {
             panic!("Запрашиваемый период выходит за пределы календаря");
         }
@@ -174,13 +180,13 @@ fn validate_date(date: String) -> Result<NaiveDate, ParseError> {
     NaiveDate::parse_from_str(&date, "%d.%m.%y")
 }
 
-pub async fn get_product_calendar(
+pub fn get_product_calendar(
     year: Option<u16>,
 ) -> Result<ProductCalendar, Box<dyn std::error::Error>> {
     let year = validate_year(year)?;
 
     let mut parser = ProductCalendarParser::new(year);
-    let mut conulstant_data = parser.parse_calendar().await?;
+    let mut conulstant_data = parser.parse_calendar()?;
 
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut conulstant_data);
@@ -190,10 +196,10 @@ pub async fn get_product_calendar(
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_get_product_calendar() {
+    #[test]
+    fn test_get_product_calendar() {
         let year = Some(2024);
-        match get_product_calendar(year).await {
+        match get_product_calendar(year) {
             Ok(pc) => {
                 println!(
                     "{:?}",
