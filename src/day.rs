@@ -4,7 +4,7 @@ use std::cmp::{Eq, PartialEq};
 use std::hash::{Hash, Hasher};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
 pub enum DayKind {
     Holiday,
     Preholiday,
