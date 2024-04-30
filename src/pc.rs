@@ -1,5 +1,6 @@
 use crate::day::{Day, DayKind};
 use crate::parser::ProductCalendarParser;
+use std::collections::HashMap;
 use std::ops::Index;
 use thiserror::Error;
 
@@ -70,6 +71,16 @@ impl<'a> IntoIterator for &'a ProductCalendar {
 impl ProductCalendar {
     pub fn iter(&self) -> impl Iterator<Item = &Day> + '_ {
         self.calendar.iter()
+    }
+
+    //Конвертирует вектр с Day в вектор с мапой
+    pub fn as_vec_hasmap(&self) -> Vec<HashMap<String, String>> {
+        let mut calendar = Vec::with_capacity(366);
+        for day in self.calendar.clone().into_iter() {
+            calendar
+                .push(serde_json::from_str(serde_json::to_string(&day).unwrap().as_str()).unwrap())
+        }
+        calendar
     }
 
     pub fn new(year: u16) -> ProductCalendar {
