@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use chrono::{Datelike, Duration, NaiveDate, ParseError, Weekday};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Statistic {
     holidays: u8,
     work_days: u8,
@@ -18,6 +18,14 @@ pub struct Statistic {
 impl Statistic {
     pub fn rest_days(&self) -> u8 {
         self.holidays + self.weekends
+    }
+
+    pub fn total_days(&self) -> u16 {
+        todo!();
+    }
+
+    pub fn work_hours(&self) -> u16 {
+        todo!();
     }
 
     pub fn as_map(&self) -> HashMap<String, u8> {
@@ -160,12 +168,7 @@ impl ProductCalendar {
 
     //Подсчет статистики
     pub fn statistic(&self) -> Statistic {
-        let mut statistic = Statistic {
-            holidays: 0,
-            work_days: 0,
-            weekends: 0,
-            preholidays: 0,
-        };
+        let mut statistic = Statistic::default();
 
         for day in self {
             match day.kind {
