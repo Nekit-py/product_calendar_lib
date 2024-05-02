@@ -1,4 +1,5 @@
-use crate::day::{Day, DayKind};
+use crate::day::Day;
+use crate::day_kind::DayKind;
 use crate::parser::ProductCalendarParser;
 use std::collections::HashMap;
 use std::ops::Index;

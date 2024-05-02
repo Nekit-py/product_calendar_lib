@@ -1,4 +1,5 @@
-use crate::day::{Day, DayKind};
+use crate::day::Day;
+use crate::day_kind::DayKind;
 use chrono::{Datelike, NaiveDate};
 use reqwest::{blocking::Client, Error};
 use scraper::{ElementRef, Html, Selector};
@@ -41,6 +42,7 @@ impl ProductCalendarParser {
             url: format!("{}/{}", URL, year),
         }
     }
+
     fn collect_days(
         &self,
         table: ElementRef,
