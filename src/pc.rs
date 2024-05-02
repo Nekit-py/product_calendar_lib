@@ -74,13 +74,12 @@ impl ProductCalendar {
     }
 
     //Конвертирует вектр с Day в вектор с мапой
-    pub fn as_vec_hasmap(&self) -> Vec<HashMap<String, String>> {
-        let mut calendar = Vec::with_capacity(366);
-        for day in self.calendar.clone().into_iter() {
-            calendar
-                .push(serde_json::from_str(serde_json::to_string(&day).unwrap().as_str()).unwrap())
-        }
-        calendar
+    pub fn as_vec_hashmap(&self) -> Vec<HashMap<String, String>> {
+        self.calendar
+            .clone()
+            .into_iter()
+            .map(|d| d.as_map())
+            .collect()
     }
 
     pub fn new(year: u16) -> ProductCalendar {

@@ -1,6 +1,8 @@
 use chrono::{NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use std::cmp::{Eq, PartialEq};
+use std::collections::HashMap;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -12,6 +14,17 @@ pub enum DayKind {
     Weekend,
 }
 
+impl fmt::Display for DayKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DayKind::Holiday => write!(f, "Holiday"),
+            DayKind::Preholiday => write!(f, "Preholiday"),
+            DayKind::Work => write!(f, "Work"),
+            DayKind::Weekend => write!(f, "Weekend"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Day {
     #[serde(with = "weekday")]
@@ -19,6 +32,16 @@ pub struct Day {
     #[serde(with = "date_format")]
     pub day: NaiveDate,
     pub kind: DayKind,
+}
+
+impl Day {
+    pub fn as_map(&self) -> HashMap<String, String> {
+        let mut day_map = HashMap::with_capacity(3);
+        day_map.insert("weekday".to_owned(), self.weekday.to_string());
+        day_map.insert("day".to_owned(), format!("{}", self.day.format("%Y-%m-%d")));
+        day_map.insert("kind".to_owned(), self.kind.to_string());
+        day_map
+    }
 }
 
 mod weekday {
@@ -117,5 +140,22 @@ mod tests {
         let serialized = serde_json::to_string(&d1).unwrap();
 
         println!("serialized = {}", serialized);
+    }
+
+    #[test]
+    fn test_day_as_map() {
+        let d1 = Day {
+            weekday: Weekday::Mon,
+            day: NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(),
+            kind: DayKind::Work,
+        };
+
+        let mut day_map = HashMap::with_capacity(3);
+        day_map.insert("weekday".to_owned(), "Mon".to_string());
+        day_map.insert("day".to_owned(), "2024-05-06".to_string());
+        day_map.insert("kind".to_owned(), "Work".to_string());
+
+        println!("{:?}", d1.as_map());
+        assert_eq!(d1.as_map(), day_map);
     }
 }
