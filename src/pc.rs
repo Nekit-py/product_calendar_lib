@@ -18,6 +18,15 @@ impl Statistic {
     pub fn rest_days(&self) -> u8 {
         self.holidays + self.weekends
     }
+
+    pub fn as_map(&self) -> HashMap<String, u8> {
+        let mut day_map = HashMap::with_capacity(3);
+        day_map.insert("holidays".to_owned(), self.holidays);
+        day_map.insert("workdays".to_owned(), self.work_days);
+        day_map.insert("weekends".to_owned(), self.weekends);
+        day_map.insert("prelolidays".to_owned(), self.preholidays);
+        day_map
+    }
 }
 
 impl PartialEq for Statistic {
@@ -182,10 +191,6 @@ pub fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
         return Ok(y);
     }
     Ok(cur_year)
-}
-
-fn validate_date(date: String) -> Result<NaiveDate, ParseError> {
-    NaiveDate::parse_from_str(&date, "%d.%m.%y")
 }
 
 pub fn get_product_calendar(

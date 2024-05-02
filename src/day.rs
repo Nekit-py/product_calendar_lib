@@ -34,6 +34,7 @@ pub struct Day {
     pub kind: DayKind,
 }
 
+//TODO: Вынести в отдельный трейт
 impl Day {
     pub fn as_map(&self) -> HashMap<String, String> {
         let mut day_map = HashMap::with_capacity(3);
