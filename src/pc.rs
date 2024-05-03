@@ -20,12 +20,10 @@ impl Statistic {
         self.holidays + self.weekends
     }
 
-    pub fn total_days(&self) -> u16 {
-        todo!();
-    }
-
+    //Рабочий день 8 часов
+    //Предпраздничный день 7 часов
     pub fn work_hours(&self) -> u16 {
-        todo!();
+        self.work_days as u16 * 8 + self.preholidays as u16 * 7
     }
 
     pub fn as_map(&self) -> HashMap<String, u8> {
@@ -87,6 +85,11 @@ impl<'a> IntoIterator for &'a ProductCalendar {
 }
 
 impl ProductCalendar {
+    //Кол-во дней в периоде
+    pub fn total_days(&self) -> usize {
+        self.calendar.len()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &Day> + '_ {
         self.calendar.iter()
     }
@@ -132,6 +135,7 @@ impl ProductCalendar {
 
     //Возвращает экземпляр с периодом от указанной даты
     //до указанная дата + кол-во дней ключительно
+    //TODO мб вернуть Option, т.к. входная дата может быть неверна и кол-во дней слишком болшое.
     pub fn period_by_by_number_of_days(self, date: NaiveDate, days: usize) -> Self {
         let start_idx = self
             .iter()
@@ -149,6 +153,22 @@ impl ProductCalendar {
         }
     }
 
+    //Опционально возвращает следующий рабочий день.
+    pub fn next_work_day(&self, cur_day: NaiveDate) -> Option<Day> {
+        let start_idx = self.iter().position(|d| d.day == cur_day);
+
+        if let Some(start_idx) = start_idx {
+            for d in self.calendar.iter().skip(start_idx + 1) {
+                match d.kind {
+                    DayKind::Work | DayKind::Preholiday => return Some(d.clone()),
+                    _ => continue,
+                }
+            }
+        }
+        None // Возвращаем None, если следующий рабочий день не найден
+    }
+
+    //TODO мб вернуть Option, т.к. входная дата может быть неверна
     pub fn period_slice(self, start: NaiveDate, end: NaiveDate) -> Self {
         let start_idx = self
             .iter()
@@ -164,6 +184,23 @@ impl ProductCalendar {
         Self {
             calendar: new_calendar,
         }
+    }
+    pub fn extract_dates_in_quarter(&self, quarter: u8) -> Option<Self> {
+        // match quarter {
+        //     1 => {
+        //         if self.calendar.len() == 366 {
+        //             Some(Self {
+        //                 calendar: self.calendar[..92],
+        //             })
+        //         } else if self.calendar.len() == 366 {
+        //             Some(Self {
+        //                 calendar: self.calendar[..92],
+        //             })
+        //         }
+        //     }
+        // }
+       todo!();
+        // None
     }
 
     //Подсчет статистики
