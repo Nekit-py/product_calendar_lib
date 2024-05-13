@@ -16,7 +16,7 @@ fn prod_cal(year: Option<u16>) -> PyResult<Vec<HashMap<String, String>>> {
 }
 
 #[pyfunction]
-fn prod_cal_statistic(year: Option<u16>) -> PyResult<HashMap<String, u8>> {
+fn prod_cal_statistic(year: Option<u16>) -> PyResult<HashMap<String, u16>> {
     let calendar = pc::get_product_calendar(year).unwrap();
     Ok(calendar.statistic().as_map())
 }

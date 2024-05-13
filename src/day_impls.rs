@@ -3,7 +3,7 @@ use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-//TODO: Вынести в отдельный трейт
+//TODO: Вынести в отдельный трейт?
 impl Day {
     pub fn as_map(&self) -> HashMap<String, String> {
         let mut day_map = HashMap::with_capacity(3);

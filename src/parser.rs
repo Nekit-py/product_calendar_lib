@@ -1,6 +1,7 @@
 use crate::day::Day;
 use crate::day_kind::DayKind;
 use chrono::{Datelike, NaiveDate};
+use reqwest::header::USER_AGENT;
 use reqwest::{blocking::Client, Error};
 use scraper::{ElementRef, Html, Selector};
 use std::collections::HashMap;
@@ -67,13 +68,16 @@ impl ProductCalendarParser {
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Error> {
         let client = Client::new();
-        let resp = client.get(&self.url).send()?;
+        let resp = client.get(&self.url)
+            .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36")
+            .send()?;
         let body = resp.text()?;
         let document = Html::parse_document(&body);
 
         let mut calendar: Vec<Day> = Vec::with_capacity(30);
 
         let month_selector = Selector::parse(".month").unwrap();
+
         let holiday_selector = Selector::parse(".holiday").unwrap();
         let preholiday_selector = Selector::parse("td.preholiday").unwrap();
         let work = Selector::parse("td.work").unwrap();
