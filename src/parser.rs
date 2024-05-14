@@ -1,5 +1,5 @@
+use crate::day::kind::DayKind;
 use crate::day::Day;
-use crate::day_kind::DayKind;
 use chrono::{Datelike, NaiveDate};
 use reqwest::header::USER_AGENT;
 use reqwest::{blocking::Client, Error};

@@ -1,10 +1,7 @@
-pub mod date_format;
 pub mod day;
-pub mod day_impls;
-pub mod day_kind;
 pub mod parser;
 pub mod pc;
-pub mod weekday;
+pub mod statistic;
 
 use pyo3::prelude::*;
 use std::collections::HashMap;

@@ -1,6 +1,9 @@
-use crate::date_format;
-use crate::day_kind::DayKind;
-use crate::weekday;
+pub mod deser;
+pub mod impls;
+pub mod kind;
+
+use self::deser::{date, weekday};
+use self::kind::DayKind;
 use chrono::{NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
@@ -9,7 +12,7 @@ use std::cmp::Eq;
 pub struct Day {
     #[serde(with = "weekday")]
     pub weekday: Weekday,
-    #[serde(with = "date_format")]
+    #[serde(with = "date")]
     pub day: NaiveDate,
     pub kind: DayKind,
 }

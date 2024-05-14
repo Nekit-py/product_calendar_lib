@@ -1,4 +1,5 @@
-use crate::day::Day;
+use super::Day;
+// use super::day::Day;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
