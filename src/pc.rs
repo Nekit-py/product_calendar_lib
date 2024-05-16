@@ -20,6 +20,13 @@ pub struct ProductCalendar {
     pub calendar: Vec<Day>,
 }
 
+impl FromIterator<Day> for ProductCalendar {
+    fn from_iter<T: IntoIterator<Item = Day>>(iter: T) -> Self {
+        let calendar: Vec<_> = iter.into_iter().collect();
+        ProductCalendar { calendar }
+    }
+}
+
 impl Index<usize> for ProductCalendar {
     type Output = Day;
 
@@ -52,7 +59,7 @@ impl ProductCalendar {
         self.calendar.len()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Day> + '_ {
+    fn iter(&self) -> impl Iterator<Item = &Day> + '_ {
         self.calendar.iter()
     }
 
@@ -68,6 +75,7 @@ impl ProductCalendar {
         })
     }
 
+    // TODO: Удалить?
     //Конвертирует вектр с Day в вектор с мапой
     pub fn as_vec_hashmap(&self) -> Vec<HashMap<String, String>> {
         self.calendar
@@ -200,6 +208,13 @@ impl ProductCalendar {
             }),
             _ => None,
         }
+    }
+
+    pub fn holidays(&self) -> Self {
+        self.clone()
+            .into_iter()
+            .filter(|day| day.kind == DayKind::Holiday)
+            .collect()
     }
 
     //Подсчет статистики

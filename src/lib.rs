@@ -5,15 +5,13 @@ pub mod statistic;
 use std::str::FromStr;
 
 use chrono::{Datelike, Local, NaiveDate, Weekday};
+use day::{kind::DayKind, Day as RustDay};
+use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::pyclass::CompareOp;
-// use std::collections::HashMap;
-use day::{kind::DayKind, Day as RustDay};
 use pyo3::types::{IntoPyDict, PyDict};
-use pyo3::exceptions::PyRuntimeError;
 use statistic::Statistic as RustStatistic;
-use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
-
 
 #[pyclass]
 pub struct ProductCalendar(RustProductCalendar);
@@ -22,10 +20,18 @@ pub struct ProductCalendar(RustProductCalendar);
 impl ProductCalendar {
     #[new]
     #[pyo3(signature=(year=None))]
-    fn new(year: Option<u16>)-> PyResult<Self >{
+    fn new(year: Option<u16>) -> PyResult<Self> {
         match get_product_calendar(year) {
             Ok(rpc) => Ok(Self(rpc)),
             Err(e) => Err(PyErr::new::<PyRuntimeError, _>(e.to_string())),
+        }
+    }
+
+    //Продумать бросать исключение или возвращать None?
+    fn extract_dates_in_quarter(&self, quarter: u8) -> PyResult<Option<Self>> {
+        match self.0.extract_dates_in_quarter(quarter) {
+            Some(calendar) => Ok(Some(Self(calendar))),
+            None => Ok(None),
         }
     }
 
@@ -35,6 +41,11 @@ impl ProductCalendar {
 
     fn total_days(&self) -> PyResult<usize> {
         Ok(self.0.total_days())
+    }
+
+    //TODO написать универсальную, которая матчит по DayKind?
+    fn holidays(&self) -> PyResult<Self> {
+        Ok(Self(self.0.holidays()))
     }
 
     fn all_days(&self) -> PyResult<Vec<Day>> {
