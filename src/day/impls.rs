@@ -1,8 +1,8 @@
 use super::Day;
-// use super::day::Day;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::fmt;
 
 //TODO: Вынести в отдельный трейт?
 impl Day {
@@ -12,6 +12,12 @@ impl Day {
         day_map.insert("day".to_owned(), format!("{}", self.day.format("%Y-%m-%d")));
         day_map.insert("kind".to_owned(), self.kind.to_string());
         day_map
+    }
+}
+
+impl fmt::Display for Day{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Day(day={}, kind={}, weekday={})", self.day, self.kind, self.weekday)
     }
 }
 

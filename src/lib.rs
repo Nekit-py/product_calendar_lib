@@ -2,20 +2,22 @@ pub mod day;
 pub mod parser;
 pub mod pc;
 pub mod statistic;
+use std::str::FromStr;
 
-use chrono::{Local, NaiveDate, Weekday, Datelike};
+use chrono::{Datelike, Local, NaiveDate, Weekday};
 use pyo3::prelude::*;
+use pyo3::pyclass::CompareOp;
 // use std::collections::HashMap;
 // use pyo3::types::{PyDict, PyTuple};
 use day::{deser::weekday, kind::DayKind, Day as RustDay};
 
-
 #[pyclass]
 pub struct Day(RustDay);
 
+//TODO Переработать RustDay таким образом, чтобы принмал только дату,
+// остальные поля сам рассчитывал
 #[pymethods]
 impl Day {
-    
     #[new]
     #[pyo3(signature=(day=None))]
     fn new(day: Option<NaiveDate>) -> Self {
@@ -34,12 +36,23 @@ impl Day {
         Self(RustDay {
             day: today,
             weekday,
-            kind
+            kind,
         })
     }
 
+    fn repr(&self) -> PyResult<String> {
+        Ok(format!("{}", self.0))
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self.0 == other.0),
+            _ => Ok(false),
+        }
+    }
+
     #[getter]
-    fn weekday(&self) -> PyResult<String >{
+    fn weekday(&self) -> PyResult<String> {
         Ok(self.0.weekday.to_string())
     }
 
@@ -50,11 +63,16 @@ impl Day {
     }
 
     #[getter]
-    fn kind(&self) -> PyResult<String >{
+    fn kind(&self) -> PyResult<String> {
         Ok(self.0.kind.to_string())
     }
-}
 
+    #[setter]
+    fn set_kind(&mut self, val: &str) -> PyResult<()> {
+        self.0.kind = DayKind::from_str(val).unwrap();
+        Ok(())
+    }
+}
 
 #[pymodule]
 fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -63,7 +81,6 @@ fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Day>()?;
     Ok(())
 }
-
 
 // #[pyfunction]
 // fn prod_cal(year: Option<u16>) -> PyResult<Vec<HashMap<String, String>>> {
