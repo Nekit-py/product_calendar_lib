@@ -1,19 +1,10 @@
 use crate::day::{kind::DayKind, Day};
+use crate::errors::ProductCalendarError;
 use crate::parser::ProductCalendarParser;
 use crate::statistic::Statistic;
+use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use std::collections::HashMap;
 use std::ops::Index;
-use thiserror::Error;
-
-use chrono::{Datelike, Duration, NaiveDate, Weekday};
-
-#[derive(Error, Debug)]
-pub enum InvalidYearError {
-    #[error("Год не может быть установлен ранее 2015")]
-    TooYearly,
-    #[error("Год не может быть установлен позже текущего.")]
-    TooLate,
-}
 
 #[derive(Clone, Debug)]
 pub struct ProductCalendar {
@@ -158,18 +149,20 @@ impl ProductCalendar {
     }
 
     //Опционально возвращает следующий рабочий день.
-    pub fn next_work_day(&self, cur_day: NaiveDate) -> Option<Day> {
+    pub fn next_work_day(&self, cur_day: NaiveDate) -> Result<Day, ProductCalendarError> {
         let start_idx = self.iter().position(|d| d.day == cur_day);
 
         if let Some(start_idx) = start_idx {
             for d in self.calendar.iter().skip(start_idx + 1) {
                 match d.kind {
-                    DayKind::Work | DayKind::Preholiday => return Some(d.clone()),
+                    DayKind::Work | DayKind::Preholiday => return Ok(d.clone()),
                     _ => continue,
                 }
             }
         }
-        None // Возвращаем None, если следующий рабочий день не найден
+        Err(ProductCalendarError::DateOutOfRange(
+            cur_day.format("%d.%m.%Y").to_string(),
+        ))
     }
 
     //TODO мб вернуть Option, т.к. входная дата может быть неверна
@@ -210,10 +203,10 @@ impl ProductCalendar {
         }
     }
 
-    pub fn holidays(&self) -> Self {
+    pub fn by_kind(&self, kind: DayKind) -> Self {
         self.clone()
             .into_iter()
-            .filter(|day| day.kind == DayKind::Holiday)
+            .filter(|day| day.kind == kind)
             .collect()
     }
 
@@ -233,14 +226,14 @@ impl ProductCalendar {
     }
 }
 
-fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
+fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
     let cur_year = chrono::Local::now().year() as u16;
     if let Some(y) = year {
         //Производсвтенный календарь в консультанте ведется с 2015 года
         if y < 2015_u16 {
-            return Err(InvalidYearError::TooYearly);
+            return Err(ProductCalendarError::InvalidYear(y.to_string()));
         } else if y > cur_year {
-            return Err(InvalidYearError::TooLate);
+            return Err(ProductCalendarError::InvalidYear(y.to_string()));
         }
         return Ok(y);
     }

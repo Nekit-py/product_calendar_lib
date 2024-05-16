@@ -1,13 +1,15 @@
 pub mod day;
+pub mod errors;
 pub mod parser;
 pub mod pc;
 pub mod statistic;
 use std::str::FromStr;
+use std::usize;
 
 use chrono::{Datelike, Local, NaiveDate, Weekday};
 use day::{kind::DayKind, Day as RustDay};
 use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
-use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pyclass::CompareOp;
 use pyo3::types::{IntoPyDict, PyDict};
@@ -27,7 +29,14 @@ impl ProductCalendar {
         }
     }
 
-    //Продумать бросать исключение или возвращать None?
+    fn by_week_num(&self, num: usize) -> PyResult<Option<Self>> {
+        match self.0.by_week_num(num) {
+            Some(rpc) => Ok(Some(Self(rpc))),
+            None => Ok(None),
+        }
+    }
+
+    //Продумать: бросать исключение или возвращать None?
     fn extract_dates_in_quarter(&self, quarter: u8) -> PyResult<Option<Self>> {
         match self.0.extract_dates_in_quarter(quarter) {
             Some(calendar) => Ok(Some(Self(calendar))),
@@ -43,9 +52,16 @@ impl ProductCalendar {
         Ok(self.0.total_days())
     }
 
-    //TODO написать универсальную, которая матчит по DayKind?
-    fn holidays(&self) -> PyResult<Self> {
-        Ok(Self(self.0.holidays()))
+    fn next_work_day(&self, cur_day: NaiveDate) -> PyResult<Day> {
+        match self.0.next_work_day(cur_day) {
+            Ok(d) => Ok(Day(d)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    fn by_kind(&self, kind: &str) -> PyResult<Self> {
+        let kind = DayKind::from_str(kind).unwrap();
+        Ok(Self(self.0.by_kind(kind)))
     }
 
     fn all_days(&self) -> PyResult<Vec<Day>> {
