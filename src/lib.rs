@@ -3,9 +3,11 @@ pub mod parser;
 pub mod pc;
 pub mod statistic;
 
+use chrono::{Local, NaiveDate, Weekday, Datelike};
 use pyo3::prelude::*;
-use std::collections::HashMap;
-use day::Day as RustDay;
+// use std::collections::HashMap;
+// use pyo3::types::{PyDict, PyTuple};
+use day::{deser::weekday, kind::DayKind, Day as RustDay};
 
 
 #[pyclass]
@@ -13,19 +15,43 @@ pub struct Day(RustDay);
 
 #[pymethods]
 impl Day {
-    #[getter]
-    fn weekday(&self) -> String {
-        self.0.weekday.to_string()
+    
+    #[new]
+    #[pyo3(signature=(day=None))]
+    fn new(day: Option<NaiveDate>) -> Self {
+        let today = if let Some(d) = day {
+            d
+        } else {
+            Local::now().date_naive()
+        };
+
+        let weekday = today.weekday();
+        let kind = match weekday {
+            Weekday::Sat | Weekday::Sun => DayKind::Weekend,
+            _ => DayKind::Work,
+        };
+
+        Self(RustDay {
+            day: today,
+            weekday,
+            kind
+        })
     }
 
     #[getter]
-    fn day(&self) -> String {
-        format!("{}", self.0.day.format("%Y-%m-%d"))
+    fn weekday(&self) -> PyResult<String >{
+        Ok(self.0.weekday.to_string())
     }
 
     #[getter]
-    fn kind(&self) -> String {
-        self.0.kind.to_string()
+    fn day(&self, py: Python<'_>) -> PyObject {
+        let date = self.0.day.into_py(py);
+        date
+    }
+
+    #[getter]
+    fn kind(&self) -> PyResult<String >{
+        Ok(self.0.kind.to_string())
     }
 }
 

@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies.pyo3]
 version = "0.21.2"
-features = ["extension-module"]
+features = ["extension-module", "chrono"]
 
 [dependencies]
 chrono = "0.4.38"
