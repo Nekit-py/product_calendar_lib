@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::fmt;
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Eq)]
 pub struct Statistic {
     pub holidays: u16,
     pub work_days: u16,
@@ -35,5 +36,15 @@ impl PartialEq for Statistic {
             && self.work_days == other.work_days
             && self.weekends == other.weekends
             && self.preholidays == other.preholidays
+    }
+}
+
+impl fmt::Display for Statistic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Statistic(holidays={}, work_days={}, weekends={}, preholidays={})",
+            self.holidays, self.work_days, self.weekends, self.preholidays
+        )
     }
 }

@@ -1,8 +1,8 @@
 use super::Day;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 //TODO: Вынести в отдельный трейт?
 impl Day {
@@ -15,9 +15,13 @@ impl Day {
     }
 }
 
-impl fmt::Display for Day{
+impl fmt::Display for Day {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Day(day={}, kind={}, weekday={})", self.day, self.kind, self.weekday)
+        write!(
+            f,
+            "Day(day={}, kind={}, weekday={})",
+            self.day, self.kind, self.weekday
+        )
     }
 }
 

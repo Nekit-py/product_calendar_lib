@@ -17,7 +17,7 @@ pub enum InvalidYearError {
 
 #[derive(Clone, Debug)]
 pub struct ProductCalendar {
-    calendar: Vec<Day>,
+    pub calendar: Vec<Day>,
 }
 
 impl Index<usize> for ProductCalendar {
@@ -181,6 +181,7 @@ impl ProductCalendar {
             calendar: new_calendar,
         }
     }
+
     pub fn extract_dates_in_quarter(&self, quarter: u8) -> Option<Self> {
         let first_querater_len = if self.calendar.len() == 366 { 90 } else { 89 };
         match quarter {
@@ -217,7 +218,7 @@ impl ProductCalendar {
     }
 }
 
-pub fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
+fn validate_year(year: Option<u16>) -> Result<u16, InvalidYearError> {
     let cur_year = chrono::Local::now().year() as u16;
     if let Some(y) = year {
         //Производсвтенный календарь в консультанте ведется с 2015 года
@@ -238,7 +239,6 @@ pub fn get_product_calendar(
 
     let mut parser = ProductCalendarParser::new(year);
     let mut consultant_data = parser.parse_calendar()?;
-    println!("{:?}", consultant_data);
 
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut consultant_data);
