@@ -25,22 +25,42 @@ impl ProductCalendar {
     fn new(year: Option<u16>) -> PyResult<Self> {
         match get_product_calendar(year) {
             Ok(rpc) => Ok(Self(rpc)),
-            Err(e) => Err(PyErr::new::<PyRuntimeError, _>(e.to_string())),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }
     }
 
-    fn by_week_num(&self, num: usize) -> PyResult<Option<Self>> {
-        match self.0.by_week_num(num) {
-            Some(rpc) => Ok(Some(Self(rpc))),
-            None => Ok(None),
+    fn after_nth_weeks(&self, date: NaiveDate, weeks: usize) -> PyResult<Day> {
+        match self.0.after_nth_weeks(date, weeks) {
+            Ok(d) => Ok(Day(d)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }
     }
 
-    //Продумать: бросать исключение или возвращать None?
-    fn extract_dates_in_quarter(&self, quarter: u8) -> PyResult<Option<Self>> {
+    fn period_by_number_of_days(&self, date: NaiveDate, days: usize) -> PyResult<Self> {
+        match self.0.period_by_number_of_days(date, days) {
+            Ok(rpc) => Ok(Self(rpc)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    fn period_by_number_of_work_days(&self, date: NaiveDate, work_days: usize) -> PyResult<Self> {
+        match self.0.period_by_number_of_work_days(date, work_days) {
+            Ok(rpc) => Ok(Self(rpc)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    fn period_slice(&self, start: NaiveDate, end: NaiveDate) -> PyResult<Self> {
+        match self.0.period_slice(start, end) {
+            Ok(rpc) => Ok(Self(rpc)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    fn extract_dates_in_quarter(&self, quarter: u8) -> PyResult<Self> {
         match self.0.extract_dates_in_quarter(quarter) {
-            Some(calendar) => Ok(Some(Self(calendar))),
-            None => Ok(None),
+            Ok(calendar) => Ok(Self(calendar)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }
     }
 
