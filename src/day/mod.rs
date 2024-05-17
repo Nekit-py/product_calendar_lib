@@ -17,6 +17,12 @@ pub struct Day {
     pub kind: DayKind,
 }
 
+impl Day {
+    pub fn new(day: NaiveDate) -> Self {
+        todo!();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
