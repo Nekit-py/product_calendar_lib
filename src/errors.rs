@@ -10,9 +10,4 @@ pub enum ProductCalendarError {
     ExceedMaxDaysError(usize),
     #[error("Неверно указан квартал:`{0}. Должен быть от 1 до 4 включительно.")]
     InvalitQuarter(u8),
-    #[error("Неверно указан индекс недели:`{0}. Должен быть от 0 до 52")]
-    InvalitWeekIndex(u8),
 }
-
-#[derive(Error, Debug)]
-pub enum ParserError {}

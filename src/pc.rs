@@ -3,6 +3,7 @@ use crate::errors::ProductCalendarError;
 use crate::parser::ProductCalendarParser;
 use crate::statistic::Statistic;
 use chrono::{Datelike, Duration, NaiveDate, Weekday};
+use chrono::Local;
 use std::ops::Index;
 
 #[derive(Clone, Debug)]
@@ -170,9 +171,9 @@ impl ProductCalendar {
 
                 let new_calendar = self.calendar[start_idx..start_idx + end_idx].to_vec();
 
-                return Ok(Self {
+                Ok(Self {
                     calendar: new_calendar,
-                });
+                })
             }
             None => Err(ProductCalendarError::DateOutOfRange(formatted_date)),
         }
@@ -264,17 +265,18 @@ impl ProductCalendar {
 }
 
 fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
-    let cur_year = chrono::Local::now().year() as u16;
-    if let Some(y) = year {
-        //Производсвтенный календарь в консультанте ведется с 2015 года
-        if y < 2015_u16 {
-            return Err(ProductCalendarError::InvalidYear(y.to_string()));
-        } else if y > cur_year {
-            return Err(ProductCalendarError::InvalidYear(y.to_string()));
-        }
-        return Ok(y);
+    let current_year = Local::now().year() as u16;
+    //Производсвтенный календарь в консультанте ведется с 2015 года
+    match year {
+        Some(year_value) => {
+            if year_value < 2015 || year_value > current_year {
+                Err(ProductCalendarError::InvalidYear(year_value.to_string()))
+            } else {
+                Ok(year_value)
+            }
+        },
+        None => Ok(current_year),
     }
-    Ok(cur_year)
 }
 
 pub fn get_product_calendar(

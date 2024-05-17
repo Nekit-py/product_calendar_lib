@@ -25,7 +25,7 @@ impl ProductCalendar {
     fn new(year: Option<u16>) -> PyResult<Self> {
         match get_product_calendar(year) {
             Ok(rpc) => Ok(Self(rpc)),
-            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+            Err(e) => Err(PyErr::new::<PyRuntimeError, _>(e.to_string())),
         }
     }
 
