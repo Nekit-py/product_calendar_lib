@@ -1,8 +1,8 @@
 use crate::day::kind::DayKind;
 use crate::day::Day;
 use chrono::{Datelike, NaiveDate};
+use reqwest::blocking::Client;
 use reqwest::header::USER_AGENT;
-use reqwest::{blocking::Client};
 use scraper::{ElementRef, Html, Selector};
 use std::collections::HashMap;
 
@@ -67,7 +67,7 @@ impl ProductCalendarParser {
     }
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
-    // pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn Error>> {
+        // pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn Error>> {
         let client = Client::new();
         let resp = client.get(&self.url)
             .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36")
@@ -118,6 +118,25 @@ impl ProductCalendarParser {
 
     fn to_date(&self, day: String, month: u8) -> NaiveDate {
         NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse::<u32>().unwrap())
-            .expect("Не удалось разобрать дату...")
+            .unwrap_or_else(|| panic!("Не удалось собрать дату из {} {}...", day, month))
+    }
+}
+
+mod tests {
+
+    #[test]
+    fn test_parse_calendar() {
+        let mut parser = super::ProductCalendarParser::new(2024);
+        match parser.parse_calendar() {
+            Ok(cal) => {
+                let d1 = super::Day {
+                    weekday: chrono::Weekday::Mon,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                    kind: super::DayKind::Holiday,
+                };
+                assert_eq!(cal[0], d1);
+            }
+            Err(_) => (),
+        }
     }
 }

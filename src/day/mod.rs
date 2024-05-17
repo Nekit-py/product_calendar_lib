@@ -23,7 +23,7 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn test_eq() {
+    fn test_day_eq() {
         let d1 = Day {
             weekday: Weekday::Mon,
             day: NaiveDate::default(),

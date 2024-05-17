@@ -2,8 +2,8 @@ use crate::day::{kind::DayKind, Day};
 use crate::errors::ProductCalendarError;
 use crate::parser::ProductCalendarParser;
 use crate::statistic::Statistic;
-use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use chrono::Local;
+use chrono::{Datelike, Duration, NaiveDate, Weekday};
 use std::ops::Index;
 
 #[derive(Clone, Debug)]
@@ -54,7 +54,11 @@ impl ProductCalendar {
         self.calendar.iter()
     }
 
-    pub fn after_nth_weeks(&self, date: NaiveDate, weeks: usize) -> Result<Day, ProductCalendarError> {
+    pub fn after_nth_weeks(
+        &self,
+        date: NaiveDate,
+        weeks: usize,
+    ) -> Result<Day, ProductCalendarError> {
         let start_idx = self.iter().position(|d| d.day == date);
         match start_idx {
             Some(start_idx) => {
@@ -64,26 +68,10 @@ impl ProductCalendar {
                 }
                 let target = &self.calendar[end_idx - 1];
                 Ok(target.clone())
-            },
+            }
             None => Err(ProductCalendarError::DateOutOfRange(date.to_string())),
         }
     }
-    // //Неверная реализация
-    // pub fn by_week_num(&self, num: usize) -> Option<Self> {
-    //     if num > 52 || num >= self.calendar.len() / 7 {
-    //         return None;//Err
-    //     }
-    //     let chunk_size = 7;
-    //     // let start_idx = {
-    //     //     num * chunk_size
-    //     // };
-    //     // let start_idx = num * chunk_size;
-    //     // let end_idx = start_idx + chunk_size;
-    //     // Some(Self {
-    //     //     calendar: self.calendar[start_idx..end_idx].to_vec(),
-    //     // })
-    //     todo!();
-    // }
 
     pub fn new(year: u16) -> ProductCalendar {
         let start_date = NaiveDate::from_ymd_opt(year as i32, 1, 1).unwrap();
@@ -153,23 +141,23 @@ impl ProductCalendar {
 
         match start_idx {
             Some(start_idx) => {
-                let end_idx: usize = self.calendar[start_idx..]
-                    .iter()
-                    .filter_map(|d| {
-                        if d.kind == DayKind::Work || d.kind == DayKind::Preholiday {
-                            work_days -= 1;
-                            Some(d.day)
-                        } else {
-                            None
-                        }
-                    })
-                    .count();
+                let mut days = 0;
+                for d in self.calendar[start_idx..].iter() {
+                    if work_days == 0 {
+                        break;
+                    }
+                    if d.kind == DayKind::Work || d.kind == DayKind::Preholiday {
+                        work_days -= 1;
+                    }
+                    days += 1;
+                }
+                let end_idx = start_idx + days;
 
                 if end_idx > self.calendar.len() {
                     return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
                 }
 
-                let new_calendar = self.calendar[start_idx..start_idx + end_idx].to_vec();
+                let new_calendar = self.calendar[start_idx..end_idx].to_vec();
 
                 Ok(Self {
                     calendar: new_calendar,
@@ -206,7 +194,6 @@ impl ProductCalendar {
 
         match start_idx {
             Some(start_idx) => {
-                // let end_idx = start_idx + days;
                 let end_idx = (start - end).num_days() as usize;
                 if end_idx > self.calendar.len() {
                     return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
@@ -274,7 +261,7 @@ fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
             } else {
                 Ok(year_value)
             }
-        },
+        }
         None => Ok(current_year),
     }
 }
@@ -292,92 +279,81 @@ pub fn get_product_calendar(
     Ok(prod_cal)
 }
 
-// mod tests {
-//     use super::*;
+mod tests {
 
-//     #[test]
-//     fn test_get_product_calendar() {
-//         let year = Some(2024);
-//         match get_product_calendar(year) {
-//             Ok(pc) => {
-//                 println!(
-//                     "{:?}",
-//                     pc.clone()
-//                         .period_by_number_of_days(NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(), 3)
-//                         .calendar
-//                 );
-//                 assert_eq!(
-//                     pc.clone()
-//                         .period_by_number_of_days(NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(), 3)
-//                         .calendar,
-//                     [
-//                         Day {
-//                             weekday: Weekday::Mon,
-//                             day: NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(),
-//                             kind: DayKind::Work
-//                         },
-//                         Day {
-//                             weekday: Weekday::Tue,
-//                             day: NaiveDate::from_ymd_opt(2024, 5, 7).unwrap(),
-//                             kind: DayKind::Work
-//                         },
-//                         Day {
-//                             weekday: Weekday::Wed,
-//                             day: NaiveDate::from_ymd_opt(2024, 5, 8).unwrap(),
-//                             kind: DayKind::Preholiday
-//                         }
-//                     ]
-//                 );
-//                 assert_eq!(
-//                     pc.clone().statistic(),
-//                     Statistic {
-//                         holidays: 17,
-//                         work_days: 243,
-//                         weekends: 101,
-//                         preholidays: 5
-//                     }
-//                 );
-//                 assert_eq!(
-//                     pc.clone()[0],
-//                     Day {
-//                         weekday: Weekday::Mon,
-//                         day: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-//                         kind: DayKind::Holiday
-//                     }
-//                 );
-//                 // println!(
-//                 //     "{:?}",
-//                 //     pc.clone()
-//                 //         .period_by_number_of_days(NaiveDate::from_ymd_opt(2024, 5, 1).unwrap(), 30)
-//                 // );
-//                 // println!("{:#?}", pc.clone().extract_dates_in_quarter(1));
-//                 assert_eq!(
-//                     pc.clone()
-//                         .period_by_number_of_work_days(
-//                             NaiveDate::from_ymd_opt(2024, 6, 11).unwrap(),
-//                             2
-//                         )
-//                         .calendar,
-//                     vec![
-//                         Day {
-//                             weekday: Weekday::Tue,
-//                             day: NaiveDate::from_ymd_opt(2024, 6, 11).unwrap(),
-//                             kind: DayKind::Preholiday,
-//                         },
-//                         Day {
-//                             weekday: Weekday::Wed,
-//                             day: NaiveDate::from_ymd_opt(2024, 6, 12).unwrap(),
-//                             kind: DayKind::Holiday,
-//                         },
-//                         Day {
-//                             weekday: Weekday::Thu,
-//                             day: NaiveDate::from_ymd_opt(2024, 6, 13).unwrap(),
-//                             kind: DayKind::Work,
-//                         },
-//                     ]
-//                 );
-//             }
-//             Err(e) => println!("Тест не прошел: {:?}", e),
-//         }
-//     }
-// }
+    #[test]
+    fn test_period_by_number_of_days() {
+        let year = Some(2024);
+        let pc = super::get_product_calendar(year).unwrap();
+        assert_eq!(
+            pc.clone()
+                .period_by_number_of_days(chrono::NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(), 3)
+                .unwrap()
+                .calendar,
+            [
+                super::Day {
+                    weekday: chrono::Weekday::Mon,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(),
+                    kind: super::DayKind::Work
+                },
+                super::Day {
+                    weekday: chrono::Weekday::Tue,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 5, 7).unwrap(),
+                    kind: super::DayKind::Work
+                },
+                super::Day {
+                    weekday: chrono::Weekday::Wed,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 5, 8).unwrap(),
+                    kind: super::DayKind::Preholiday
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn test_statistic() {
+        let year = Some(2024);
+        let pc = super::get_product_calendar(year).unwrap();
+        assert_eq!(
+            pc.clone().statistic(),
+            super::Statistic {
+                holidays: 17,
+                work_days: 243,
+                weekends: 101,
+                preholidays: 5
+            }
+        );
+    }
+
+    #[test]
+    fn test_period_by_number_of_work_days() {
+        let year = Some(2024);
+        let pc = super::get_product_calendar(year).unwrap();
+        assert_eq!(
+            pc.clone()
+                .period_by_number_of_work_days(
+                    chrono::NaiveDate::from_ymd_opt(2024, 6, 11).unwrap(),
+                    2
+                )
+                .unwrap()
+                .calendar,
+            vec![
+                super::Day {
+                    weekday: chrono::Weekday::Tue,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 6, 11).unwrap(),
+                    kind: super::DayKind::Preholiday,
+                },
+                super::Day {
+                    weekday: chrono::Weekday::Wed,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 6, 12).unwrap(),
+                    kind: super::DayKind::Holiday,
+                },
+                super::Day {
+                    weekday: chrono::Weekday::Thu,
+                    day: chrono::NaiveDate::from_ymd_opt(2024, 6, 13).unwrap(),
+                    kind: super::DayKind::Work,
+                },
+            ]
+        );
+    }
+}

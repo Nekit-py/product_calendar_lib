@@ -3,8 +3,6 @@ pub mod errors;
 pub mod parser;
 pub mod pc;
 pub mod statistic;
-use std::str::FromStr;
-use std::usize;
 
 use chrono::{Datelike, Local, NaiveDate, Weekday};
 use day::{kind::DayKind, Day as RustDay};
@@ -14,6 +12,8 @@ use pyo3::prelude::*;
 use pyo3::pyclass::CompareOp;
 use pyo3::types::{IntoPyDict, PyDict};
 use statistic::Statistic as RustStatistic;
+use std::str::FromStr;
+use std::usize;
 
 #[pyclass]
 pub struct ProductCalendar(RustProductCalendar);
