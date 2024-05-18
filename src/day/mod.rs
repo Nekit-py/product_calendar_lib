@@ -4,7 +4,7 @@ pub mod kind;
 
 use self::deser::{date, weekday};
 use self::kind::DayKind;
-use chrono::{NaiveDate, Weekday};
+use chrono::{Datelike, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
 
@@ -19,7 +19,12 @@ pub struct Day {
 
 impl Day {
     pub fn new(day: NaiveDate) -> Self {
-        todo!();
+        let weekday = day.weekday();
+        let kind = match weekday {
+            Weekday::Sat | Weekday::Sun => DayKind::Weekend,
+            _ => DayKind::Work,
+        };
+        Day { day, weekday, kind }
     }
 }
 

@@ -9,5 +9,5 @@ pub enum ProductCalendarError {
     #[error("Количество дней: `{0}` превышает максимально допустимое значение")]
     ExceedMaxDaysError(usize),
     #[error("Неверно указан квартал:`{0}. Должен быть от 1 до 4 включительно.")]
-    InvalitQuarter(u8),
+    InvalidQuarter(u8),
 }

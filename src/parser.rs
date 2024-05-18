@@ -1,5 +1,4 @@
-use crate::day::kind::DayKind;
-use crate::day::Day;
+use crate::day::{kind::DayKind, Day};
 use chrono::{Datelike, NaiveDate};
 use reqwest::blocking::Client;
 use reqwest::header::USER_AGENT;
@@ -54,71 +53,68 @@ impl ProductCalendarParser {
     ) -> Vec<Day> {
         table
             .select(selector)
-            .map(|e| {
-                let day_text = e.text().next().unwrap();
-                let date = self.to_date(day_text.replace(replace_chars, ""), month_number);
-                Day {
-                    weekday: date.weekday(),
-                    day: date,
-                    kind: day_kind,
-                }
+            .filter_map(|e| {
+                e.text().next().and_then(|day_text| {
+                    self.to_date(day_text.replace(replace_chars, ""), month_number)
+                        .map(|date| {
+                            let mut day = Day::new(date);
+                            day.kind = day_kind;
+                            day
+                        })
+                })
             })
             .collect()
     }
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
-        // pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn Error>> {
         let client = Client::new();
-        let resp = client.get(&self.url)
-            .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36")
+        let resp = client
+            .get(&self.url)
+            .header(USER_AGENT, "Mozilla/5.0")
             .send()?;
         let body = resp.text()?;
         let document = Html::parse_document(&body);
 
-        let mut calendar: Vec<Day> = Vec::with_capacity(30);
+        let mut calendar = Vec::with_capacity(30);
 
         let month_selector = Selector::parse(".month")?;
-
         let holiday_selector = Selector::parse(".holiday")?;
         let preholiday_selector = Selector::parse("td.preholiday")?;
-        let work = Selector::parse("td.work")?;
+        let work_selector = Selector::parse("td.work")?;
 
         for table in document.select(&Selector::parse("table")?) {
             if let Some(month_element) = table.select(&month_selector).next() {
-                let month_name = month_element.text().collect::<String>();
-                let month_number = *self.months.get(month_name.as_str()).unwrap_or(&0_u8);
-
-                let holidays = self.collect_days(
-                    table,
-                    &holiday_selector,
-                    month_number,
-                    DayKind::Holiday,
-                    "\u{a0}",
-                );
-                let preholidays = self.collect_days(
-                    table,
-                    &preholiday_selector,
-                    month_number,
-                    DayKind::Preholiday,
-                    "*\u{a0}",
-                );
-                let work_in_weekend =
-                    self.collect_days(table, &work, month_number, DayKind::Work, "\u{a0}");
-
-                calendar.extend(
-                    holidays
-                        .into_iter()
-                        .chain(preholidays)
-                        .chain(work_in_weekend),
-                );
+                let month_name = month_element.text().collect::<String>().trim().to_string();
+                if let Some(&month_number) = self.months.get(month_name.as_str()) {
+                    calendar.extend(self.collect_days(
+                        table,
+                        &holiday_selector,
+                        month_number,
+                        DayKind::Holiday,
+                        "\u{a0}",
+                    ));
+                    calendar.extend(self.collect_days(
+                        table,
+                        &preholiday_selector,
+                        month_number,
+                        DayKind::Preholiday,
+                        "*\u{a0}",
+                    ));
+                    calendar.extend(self.collect_days(
+                        table,
+                        &work_selector,
+                        month_number,
+                        DayKind::Work,
+                        "\u{a0}",
+                    ));
+                }
             }
         }
         Ok(calendar)
     }
 
-    fn to_date(&self, day: String, month: u8) -> NaiveDate {
-        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse::<u32>().unwrap())
-            .unwrap_or_else(|| panic!("Не удалось собрать дату из {} {}...", day, month))
+    fn to_date(&self, day: String, month: u8) -> Option<NaiveDate> {
+        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse().ok()?)
     }
 }
 
