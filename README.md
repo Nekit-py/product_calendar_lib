@@ -3,6 +3,7 @@
 
 Производственный Календарь — это инструмент, разработанный для управления и анализа дат, рабочих дней и праздников в заданный период.
 Этот README содержит подробное описание функционала, инструкции по установке и примеры использования.
+Информация о праздничных/предпраздничных днях беретися из https://www.consultant.ru
 
 ## Функционал
 1. Выгрузка всего года: Получение производственного календаря на весь год.
@@ -29,7 +30,7 @@ https://github.com/Nekit-py/product_calendar_lib.git
 
 2. Установите Maturin
 https://pypi.org/project/maturin/
-или
+#### MacOs
 ```bash
 brew install maturin
 ```
@@ -81,6 +82,7 @@ class Statistic:
 
     def as_dict(self) -> dict[str, int]:
         ...
+
 
 class ProductCalendar:
     def __init__(self, year: int | None = None):
