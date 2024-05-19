@@ -231,6 +231,11 @@ impl Day {
         self.0.kind = DayKind::from_str(val).unwrap();
         Ok(())
     }
+
+    //TODO: В Отдельный трейт
+    fn as_dict<'py>(&self, py: Python<'py>) -> Bound<'py, PyDict> {
+        self.0.as_map().into_py_dict_bound(py)
+    }
 }
 
 #[pymodule]

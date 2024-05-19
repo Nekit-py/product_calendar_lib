@@ -1,5 +1,5 @@
 use crate::day::{kind::DayKind, Day};
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use reqwest::blocking::Client;
 use reqwest::header::USER_AGENT;
 use scraper::{ElementRef, Html, Selector};
