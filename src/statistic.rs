@@ -21,7 +21,7 @@ impl Statistic {
     }
 
     pub fn as_map(&self) -> HashMap<String, u16> {
-        let mut day_map = HashMap::with_capacity(3);
+        let mut day_map = HashMap::with_capacity(4);
         day_map.insert("holidays".to_owned(), self.holidays);
         day_map.insert("workdays".to_owned(), self.work_days);
         day_map.insert("weekends".to_owned(), self.weekends);
