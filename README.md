@@ -24,24 +24,24 @@
 ### Самостоятельная сборка
 
 1. Клонируйте репозиторий
-```bash
+```
 https://github.com/Nekit-py/product_calendar_lib.git
 ```
 
 2. Установите Maturin
 https://pypi.org/project/maturin/
 #### MacOs
-```bash
+```console
 brew install maturin
 ```
 
 3. Соберите библиотеку
-```bash
+```console
 maturin build --release
 ```
 
 Для конкретной версии python:
-```bash
+```console
 maturin build --release --interpreter 3.10
 ```
 
@@ -54,7 +54,7 @@ maturin build --release --interpreter 3.10
 1. Скачайте wheel file c https://pypi.org/project/product_calendar_lib/
 
 2. Установите
-```bash
+```console
 pip install product_calendar-0.1.0-cp312-cp312-macosx_11_0_arm64.whl
 ```
 
