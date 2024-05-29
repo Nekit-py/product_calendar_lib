@@ -123,16 +123,13 @@ mod tests {
     #[test]
     fn test_parse_calendar() {
         let mut parser = super::ProductCalendarParser::new(2024);
-        match parser.parse_calendar() {
-            Ok(cal) => {
-                let d1 = super::Day {
-                    weekday: chrono::Weekday::Mon,
-                    day: chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                    kind: super::DayKind::Holiday,
-                };
-                assert_eq!(cal[0], d1);
-            }
-            Err(_) => (),
+        if let Ok(cal) = parser.parse_calendar() {
+            let d1 = super::Day {
+                weekday: chrono::Weekday::Mon,
+                day: chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                kind: super::DayKind::Holiday,
+            };
+            assert_eq!(cal[0], d1);
         }
     }
 }
