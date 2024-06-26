@@ -123,19 +123,19 @@ print(yearly_calendar)
 
 ### Выгрузка за период (N календарных дней)
 ```python
-calendar_period = calendar.period_by_number_of_days(date(2024-05-01), 10)
+calendar_period = calendar.period_by_number_of_days(date(2024, 5, 1), 10)
 print(calendar_period)
 ```
 
  ### Выгрузка за период (N рабочих дней)
 ```python
-calendar_period_working_days = calendar.period_by_number_of_work_days(date(2024-05-01), 10)
+calendar_period_working_days = calendar.period_by_number_of_work_days(date(2024, 5, 1), 10)
 print(calendar_period_working_days)
 ```
 
  ### Выгрузка за период (начальная дата - конечная дата)
 ```python
-calendar_period = calendar.period_slice(date(2024-05-01), date(2024-05-30))
+calendar_period = calendar.period_slice(date(2024, 5, 1), date(2024, 5, 30))
 print(calendar_period)
 ```
 
