@@ -67,20 +67,22 @@ impl ProductCalendarParser {
     }
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
-        let client = Client::new();
-        let resp = client
-            .get(&self.url)
-            .header(USER_AGENT, "Mozilla/5.0")
-            .send()?;
-        let body = resp.text()?;
-        let document = Html::parse_document(&body);
-
-        let mut calendar = Vec::with_capacity(30);
+        let document = {
+            let client = Client::new();
+            let resp = client
+                .get(&self.url)
+                .header(USER_AGENT, "Mozilla/5.0")
+                .send()?;
+            let body = resp.text()?;
+            Html::parse_document(&body)
+        };
 
         let month_selector = Selector::parse(".month")?;
         let holiday_selector = Selector::parse(".holiday")?;
         let preholiday_selector = Selector::parse("td.preholiday")?;
         let work_selector = Selector::parse("td.work")?;
+
+        let mut calendar = Vec::with_capacity(30);
 
         for table in document.select(&Selector::parse("table")?) {
             if let Some(month_element) = table.select(&month_selector).next() {
