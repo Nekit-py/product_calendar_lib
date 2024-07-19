@@ -5,8 +5,11 @@ use crate::statistic::Statistic;
 use chrono::{Datelike, Duration, Local, NaiveDate, Weekday};
 use std::collections::HashMap;
 use std::ops::Index;
+use std::sync::Mutex;
 
-pub static mut CACHED_CALENDAR: Option<HashMap<u16, ProductCalendar>> = None;
+lazy_static! {
+    static ref CACHED_CALENDAR: Mutex<HashMap<u16, ProductCalendar>> = Mutex::new(HashMap::new());
+}
 
 #[derive(Clone, Debug)]
 pub struct ProductCalendar {
@@ -256,22 +259,18 @@ pub fn get_product_calendar(
     let year = validate_year(year)?;
 
     let mut parser = ProductCalendarParser::new(year);
-    //unsafe используется для чтения из глобальной статической переменной
-    unsafe {
-        if let Some(cache) = &CACHED_CALENDAR {
-            if let Some(calendar) = cache.get(&year) {
-                return Ok(calendar.clone());
-            }
-        }
-    }
-    let mut consultant_data = parser.parse_calendar()?;
-    let mut prod_cal = ProductCalendar::new(year);
-    prod_cal.merge(&mut consultant_data);
 
-    //unsafe используется для чтения из глобальной статической переменной
-    unsafe {
-        if let Some(cache) = &mut CACHED_CALENDAR {
-            cache.insert(year, prod_cal.clone());
+    let mut cached = CACHED_CALENDAR.lock().unwrap();
+
+    let mut prod_cal;
+
+    match cached.get(&year) {
+        Some(cached_cal) => return Ok(cached_cal.clone()),
+        None => {
+            let mut consultant_data = parser.parse_calendar()?;
+            prod_cal = ProductCalendar::new(year);
+            prod_cal.merge(&mut consultant_data);
+            cached.insert(year, prod_cal.clone());
         }
     }
     Ok(prod_cal)

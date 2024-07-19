@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 pub mod day;
 pub mod errors;
 pub mod parser;
@@ -6,13 +9,12 @@ pub mod statistic;
 
 use chrono::{Datelike, Local, NaiveDate, Weekday};
 use day::{kind::DayKind, Day as RustDay};
-use pc::{get_product_calendar, ProductCalendar as RustProductCalendar, CACHED_CALENDAR};
+use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pyclass::CompareOp;
 use pyo3::types::{IntoPyDict, PyDict};
 use statistic::Statistic as RustStatistic;
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::usize;
 
@@ -299,36 +301,10 @@ impl Day {
     }
 }
 
-unsafe fn init_cached_calendar() {
-    match CACHED_CALENDAR {
-        Some(_) => {}
-        None => CACHED_CALENDAR = Some(HashMap::new()),
-    }
-}
-
 #[pymodule]
 fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    //unsafe используется для инициализации глобальной, статической переменной
-    unsafe { init_cached_calendar() }
-
     m.add_class::<ProductCalendar>()?;
     m.add_class::<Statistic>()?;
     m.add_class::<Day>()?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{init_cached_calendar, CACHED_CALENDAR};
-
-    #[test]
-    fn test_init_calendar_cache() {
-        unsafe {
-            assert_eq!(true, CACHED_CALENDAR.clone().is_none());
-            init_cached_calendar();
-            println!("{:?}", &CACHED_CALENDAR);
-            assert_eq!(true, CACHED_CALENDAR.clone().is_some());
-            assert_eq!(true, CACHED_CALENDAR.clone().unwrap().is_empty());
-        }
-    }
 }
