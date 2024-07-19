@@ -301,8 +301,12 @@ impl Day {
 
 #[pymodule]
 fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    //unsafe используется для инициализации глобальной, статической переменной
     unsafe {
-        CACHED_CALENDAR = Some(HashMap::new());
+        match CACHED_CALENDAR {
+            Some(_) => {}
+            None => CACHED_CALENDAR = Some(HashMap::new()),
+        }
     }
 
     m.add_class::<ProductCalendar>()?;

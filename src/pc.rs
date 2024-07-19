@@ -256,10 +256,10 @@ pub fn get_product_calendar(
     let year = validate_year(year)?;
 
     let mut parser = ProductCalendarParser::new(year);
+    //unsafe используется для чтения из глобальной статической переменной
     unsafe {
         if let Some(cache) = &CACHED_CALENDAR {
             if let Some(calendar) = cache.get(&year) {
-                println!("Извлекаем из кэша {} год.", year);
                 return Ok(calendar.clone());
             }
         }
@@ -268,6 +268,7 @@ pub fn get_product_calendar(
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut consultant_data);
 
+    //unsafe используется для чтения из глобальной статической переменной
     unsafe {
         if let Some(cache) = &mut CACHED_CALENDAR {
             cache.insert(year, prod_cal.clone());
