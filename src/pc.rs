@@ -262,17 +262,15 @@ pub fn get_product_calendar(
 
     let mut cached = CACHED_CALENDAR.lock().unwrap();
 
-    let mut prod_cal;
-
-    match cached.get(&year) {
-        Some(cached_cal) => return Ok(cached_cal.clone()),
-        None => {
-            let mut consultant_data = parser.parse_calendar()?;
-            prod_cal = ProductCalendar::new(year);
-            prod_cal.merge(&mut consultant_data);
-            cached.insert(year, prod_cal.clone());
-        }
+    if let Some(cached_cal) = cached.get(&year) {
+        return Ok(cached_cal.clone());
     }
+
+    let mut consultant_data = parser.parse_calendar()?;
+    let mut prod_cal = ProductCalendar::new(year);
+    prod_cal.merge(&mut consultant_data);
+    cached.insert(year, prod_cal.clone());
+
     Ok(prod_cal)
 }
 
