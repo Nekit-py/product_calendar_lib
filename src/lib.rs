@@ -299,18 +299,36 @@ impl Day {
     }
 }
 
+unsafe fn init_cached_calendar() {
+    match CACHED_CALENDAR {
+        Some(_) => {}
+        None => CACHED_CALENDAR = Some(HashMap::new()),
+    }
+}
+
 #[pymodule]
 fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     //unsafe используется для инициализации глобальной, статической переменной
-    unsafe {
-        match CACHED_CALENDAR {
-            Some(_) => {}
-            None => CACHED_CALENDAR = Some(HashMap::new()),
-        }
-    }
+    unsafe { init_cached_calendar() }
 
     m.add_class::<ProductCalendar>()?;
     m.add_class::<Statistic>()?;
     m.add_class::<Day>()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{init_cached_calendar, CACHED_CALENDAR};
+
+    #[test]
+    fn test_init_calendar_cache() {
+        unsafe {
+            assert_eq!(true, CACHED_CALENDAR.clone().is_none());
+            init_cached_calendar();
+            println!("{:?}", &CACHED_CALENDAR);
+            assert_eq!(true, CACHED_CALENDAR.clone().is_some());
+            assert_eq!(true, CACHED_CALENDAR.clone().unwrap().is_empty());
+        }
+    }
 }
