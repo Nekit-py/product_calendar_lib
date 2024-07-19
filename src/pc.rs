@@ -3,7 +3,10 @@ use crate::errors::ProductCalendarError;
 use crate::parser::ProductCalendarParser;
 use crate::statistic::Statistic;
 use chrono::{Datelike, Duration, Local, NaiveDate, Weekday};
+use std::collections::HashMap;
 use std::ops::Index;
+
+pub static mut CACHED_CALENDAR: Option<HashMap<u16, ProductCalendar>> = None;
 
 #[derive(Clone, Debug)]
 pub struct ProductCalendar {
@@ -238,9 +241,10 @@ impl ProductCalendar {
 }
 
 fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
+    const MIN_YEAR: u16 = 2015;
     let current_year = Local::now().year() as u16;
     match year {
-        Some(year_value) if year_value >= 2015 && year_value <= current_year => Ok(year_value),
+        Some(year_value) if year_value >= MIN_YEAR && year_value <= current_year => Ok(year_value),
         Some(year_value) => Err(ProductCalendarError::InvalidYear(year_value.to_string())),
         None => Ok(current_year),
     }
@@ -252,10 +256,23 @@ pub fn get_product_calendar(
     let year = validate_year(year)?;
 
     let mut parser = ProductCalendarParser::new(year);
+    unsafe {
+        if let Some(cache) = &CACHED_CALENDAR {
+            if let Some(calendar) = cache.get(&year) {
+                println!("Извлекаем из кэша {} год.", year);
+                return Ok(calendar.clone());
+            }
+        }
+    }
     let mut consultant_data = parser.parse_calendar()?;
-
     let mut prod_cal = ProductCalendar::new(year);
     prod_cal.merge(&mut consultant_data);
+
+    unsafe {
+        if let Some(cache) = &mut CACHED_CALENDAR {
+            cache.insert(year, prod_cal.clone());
+        }
+    }
     Ok(prod_cal)
 }
 

@@ -6,12 +6,13 @@ pub mod statistic;
 
 use chrono::{Datelike, Local, NaiveDate, Weekday};
 use day::{kind::DayKind, Day as RustDay};
-use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
+use pc::{get_product_calendar, ProductCalendar as RustProductCalendar, CACHED_CALENDAR};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pyclass::CompareOp;
 use pyo3::types::{IntoPyDict, PyDict};
 use statistic::Statistic as RustStatistic;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::usize;
 
@@ -300,6 +301,10 @@ impl Day {
 
 #[pymodule]
 fn product_calendar(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    unsafe {
+        CACHED_CALENDAR = Some(HashMap::new());
+    }
+
     m.add_class::<ProductCalendar>()?;
     m.add_class::<Statistic>()?;
     m.add_class::<Day>()?;
