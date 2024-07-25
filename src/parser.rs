@@ -58,7 +58,7 @@ impl ProductCalendarParser {
                     self.to_date(day_text.replace(replace_chars, ""), month_number)
                         .map(|date| {
                             let mut day = Day::new(date);
-                            day.kind = day_kind;
+                            day.set_kind(day_kind);
                             day
                         })
                 })
@@ -129,11 +129,9 @@ mod tests {
             .parse_calendar()
             .expect("Не удалось распарсить календарь");
 
-        let expected_day = super::Day {
-            weekday: chrono::Weekday::Mon,
-            day: chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-            kind: super::DayKind::Holiday,
-        };
+        let mut expected_day =
+            super::Day::new(chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        expected_day.set_kind(super::DayKind::Holiday);
 
         assert_eq!(parsed_calendar[0], expected_day);
     }

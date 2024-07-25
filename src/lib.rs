@@ -7,7 +7,7 @@ pub mod parser;
 pub mod pc;
 pub mod statistic;
 
-use chrono::{Datelike, Local, NaiveDate, Weekday};
+use chrono::NaiveDate;
 use day::{kind::DayKind, Day as RustDay};
 use pc::{get_product_calendar, ProductCalendar as RustProductCalendar};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
@@ -58,6 +58,20 @@ impl ProductCalendar {
         match self.0.after_nth_weeks(date, weeks) {
             Ok(d) => Ok(Day(d)),
             Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    /// Создает новый экземпляр Day.
+    /// # Аргументы
+    /// * `date` - дата по которой требуется информация.
+    /// # Пример
+    /// ```
+    /// let calendar = ProductCalendar::new(Some(2024));
+    /// let day = calendar.info_by_date(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap())
+    fn info_by_date(&self, date: NaiveDate) -> PyResult<Option<Day>> {
+        match self.0.info_by_date(date) {
+            Some(d) => Ok(Some(Day(d))),
+            None => Ok(None),
         }
     }
 
@@ -231,38 +245,13 @@ impl Statistic {
     }
 }
 
+///В python экземпляр этого класса нельзя создать напрямую
+/// т.к. некорректно будет проставлен DayKind
 #[pyclass]
 pub struct Day(RustDay);
 
 #[pymethods]
 impl Day {
-    /// Создает новый экземпляр Day.
-    /// Принимает опционально объект datetime.date.
-    ///
-    /// # Аргументы
-    /// * `day` - Опциональная дата.
-    #[new]
-    #[pyo3(signature=(day=None))]
-    fn new(day: Option<NaiveDate>) -> Self {
-        let today = if let Some(d) = day {
-            d
-        } else {
-            Local::now().date_naive()
-        };
-
-        let weekday = today.weekday();
-        let kind = match weekday {
-            Weekday::Sat | Weekday::Sun => DayKind::Weekend,
-            _ => DayKind::Work,
-        };
-
-        Self(RustDay {
-            day: today,
-            weekday,
-            kind,
-        })
-    }
-
     fn __repr__(&self) -> PyResult<String> {
         Ok(format!("{}", self.0))
     }
@@ -276,23 +265,17 @@ impl Day {
 
     #[getter]
     fn weekday(&self) -> PyResult<String> {
-        Ok(self.0.weekday.to_string())
+        Ok(self.0.get_weekday().to_string())
     }
 
     #[getter]
     fn day(&self, py: Python<'_>) -> PyObject {
-        self.0.day.into_py(py)
+        self.0.get_date().into_py(py)
     }
 
     #[getter]
     fn kind(&self) -> PyResult<String> {
-        Ok(self.0.kind.to_string())
-    }
-
-    #[setter]
-    fn set_kind(&mut self, val: &str) -> PyResult<()> {
-        self.0.kind = DayKind::from_str(val).unwrap();
-        Ok(())
+        Ok(self.0.get_kind().to_string())
     }
 
     //TODO: В Отдельный трейт

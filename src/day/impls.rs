@@ -2,7 +2,6 @@ use super::Day;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 
 impl Day {
     pub fn as_map(&self) -> HashMap<String, String> {
@@ -26,12 +25,6 @@ impl fmt::Display for Day {
 
 impl PartialEq for Day {
     fn eq(&self, other: &Self) -> bool {
-        self.day == other.day
-    }
-}
-
-impl Hash for Day {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.day.hash(state);
+        self.day == other.day && self.kind == other.kind && self.weekday == other.weekday
     }
 }
