@@ -63,17 +63,20 @@ impl ProductCalendar {
         date: NaiveDate,
         weeks: usize,
     ) -> Result<Day, ProductCalendarError> {
-        let start_idx = self.iter().position(|d| d.get_date() == date);
-        match start_idx {
-            Some(start_idx) => {
-                let end_idx = start_idx + weeks * 7;
-                if end_idx >= self.calendar.len() {
-                    return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
-                }
-                Ok(self.calendar[end_idx].clone())
-            }
-            None => Err(ProductCalendarError::DateOutOfRange(date.to_string())),
+        let start_idx = self
+            .iter()
+            .position(|d| d.get_date() == date)
+            .ok_or_else(|| ProductCalendarError::DateOutOfRange(date.to_string()))?;
+
+        let end_idx = start_idx
+            .checked_add(weeks * 7)
+            .ok_or_else(|| ProductCalendarError::ExceedMaxDaysError(start_idx + weeks * 7))?;
+
+        if end_idx >= self.calendar.len() {
+            return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
         }
+
+        Ok(self.calendar[end_idx].clone())
     }
 
     pub fn new(year: u16) -> ProductCalendar {
@@ -112,20 +115,22 @@ impl ProductCalendar {
         date: NaiveDate,
         days: usize,
     ) -> Result<Self, ProductCalendarError> {
-        let start_idx = self.iter().position(|d| d.get_date() == date);
+        let start_idx = self
+            .iter()
+            .position(|d| d.get_date() == date)
+            .ok_or_else(|| ProductCalendarError::DateOutOfRange(date.to_string()))?;
 
-        match start_idx {
-            Some(start_idx) => {
-                let end_idx = start_idx + days;
-                if end_idx > self.calendar.len() {
-                    return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
-                }
-                Ok(Self {
-                    calendar: self.calendar[start_idx..end_idx].to_vec(),
-                })
-            }
-            None => Err(ProductCalendarError::DateOutOfRange(date.to_string())),
+        let end_idx = start_idx
+            .checked_add(days)
+            .ok_or_else(|| ProductCalendarError::ExceedMaxDaysError(start_idx + days))?;
+
+        if end_idx > self.calendar.len() {
+            return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
         }
+
+        Ok(Self {
+            calendar: self.calendar[start_idx..end_idx].to_vec(),
+        })
     }
 
     pub fn period_by_number_of_work_days(
@@ -135,27 +140,25 @@ impl ProductCalendar {
     ) -> Result<Self, ProductCalendarError> {
         let start_idx = self.iter().position(|d| d.get_date() == date);
 
-        match start_idx {
-            Some(start_idx) => {
-                let mut days = 0;
-                for d in self.calendar[start_idx..].iter() {
+        if let Some(start_idx) = start_idx {
+            let mut end_idx = start_idx;
+            for day in self.calendar[start_idx..].iter() {
+                if day.get_kind() == DayKind::Work || day.get_kind() == DayKind::Preholiday {
                     if work_days == 0 {
                         break;
                     }
-                    if d.get_kind() == DayKind::Work || d.get_kind() == DayKind::Preholiday {
-                        work_days -= 1;
-                    }
-                    days += 1;
+                    work_days -= 1;
                 }
-                let end_idx = start_idx + days;
-                if end_idx > self.calendar.len() {
-                    return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
-                }
-                Ok(Self {
-                    calendar: self.calendar[start_idx..end_idx].to_vec(),
-                })
+                end_idx += 1;
             }
-            None => Err(ProductCalendarError::DateOutOfRange(date.to_string())),
+            if end_idx > self.calendar.len() {
+                return Err(ProductCalendarError::ExceedMaxDaysError(end_idx));
+            }
+            Ok(Self {
+                calendar: self.calendar[start_idx..end_idx].to_vec(),
+            })
+        } else {
+            Err(ProductCalendarError::DateOutOfRange(date.to_string()))
         }
     }
 
@@ -177,8 +180,20 @@ impl ProductCalendar {
         start: NaiveDate,
         end: NaiveDate,
     ) -> Result<Self, ProductCalendarError> {
-        let start_idx = self.iter().position(|d| d.get_date() == start);
-        let end_idx = self.iter().position(|d| d.get_date() == end);
+        let mut start_idx = None;
+        let mut end_idx = None;
+
+        for (i, day) in self.iter().enumerate() {
+            if day.get_date() == start {
+                start_idx = Some(i);
+            }
+            if day.get_date() == end {
+                end_idx = Some(i);
+            }
+            if start_idx.is_some() && end_idx.is_some() {
+                break;
+            }
+        }
 
         match (start_idx, end_idx) {
             (Some(start_idx), Some(end_idx)) => {
@@ -198,22 +213,17 @@ impl ProductCalendar {
 
     pub fn extract_dates_in_quarter(&self, quarter: u8) -> Result<Self, ProductCalendarError> {
         let first_quarter_len = if self.calendar.len() == 366 { 90 } else { 89 };
-        match quarter {
-            1 => Ok(Self {
-                calendar: self.calendar[..=first_quarter_len].to_vec(),
-            }),
-            2 => Ok(Self {
-                calendar: self.calendar[first_quarter_len + 1..first_quarter_len + 92].to_vec(),
-            }),
-            3 => Ok(Self {
-                calendar: self.calendar[first_quarter_len + 92..first_quarter_len + 184].to_vec(),
-            }),
+        let (start_idx, end_idx) = match quarter {
+            1 => (0, first_quarter_len + 1),
+            2 => (first_quarter_len + 1, first_quarter_len + 92),
+            3 => (first_quarter_len + 92, first_quarter_len + 184),
+            4 => (first_quarter_len + 184, self.calendar.len()),
+            _ => return Err(ProductCalendarError::InvalidQuarter(quarter)),
+        };
 
-            4 => Ok(Self {
-                calendar: self.calendar[first_quarter_len + 184..].to_vec(),
-            }),
-            _ => Err(ProductCalendarError::InvalidQuarter(quarter)),
-        }
+        Ok(Self {
+            calendar: self.calendar[start_idx..end_idx].to_vec(),
+        })
     }
 
     pub fn by_kind(&self, kind: DayKind) -> Self {
@@ -230,14 +240,13 @@ impl ProductCalendar {
     pub fn statistic(&self) -> Statistic {
         let mut statistic = Statistic::default();
 
-        for day in self.iter() {
-            match day.get_kind() {
-                DayKind::Holiday => statistic.holidays += 1,
-                DayKind::Preholiday => statistic.preholidays += 1,
-                DayKind::Work => statistic.work_days += 1,
-                DayKind::Weekend => statistic.weekends += 1,
-            }
-        }
+        self.iter().for_each(|day| match day.get_kind() {
+            DayKind::Holiday => statistic.holidays += 1,
+            DayKind::Preholiday => statistic.preholidays += 1,
+            DayKind::Work => statistic.work_days += 1,
+            DayKind::Weekend => statistic.weekends += 1,
+        });
+
         statistic
     }
 
@@ -247,13 +256,8 @@ impl ProductCalendar {
 }
 
 fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
-    const MIN_YEAR: u16 = 2015;
     let current_year = Local::now().year() as u16;
-    match year {
-        Some(year_value) if year_value >= MIN_YEAR && year_value <= current_year => Ok(year_value),
-        Some(year_value) => Err(ProductCalendarError::InvalidYear(year_value.to_string())),
-        None => Ok(current_year),
-    }
+    Ok(year.unwrap_or_else(|| current_year))
 }
 
 pub fn get_product_calendar(

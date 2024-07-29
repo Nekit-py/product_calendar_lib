@@ -24,7 +24,7 @@ const MONTHS: [&str; 12] = [
 #[derive(Debug)]
 pub struct ProductCalendarParser {
     months: HashMap<&'static str, u8>,
-    pub year: u16,
+    year: u16,
     url: String,
 }
 
@@ -67,16 +67,14 @@ impl ProductCalendarParser {
     }
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
-        let document = {
-            let client = Client::new();
-            let resp = client
-                .get(&self.url)
-                .header(USER_AGENT, "Mozilla/5.0")
-                .send()?;
-            let body = resp.text()?;
-            Html::parse_document(&body)
-        };
+        let client = Client::new();
+        let body = client
+            .get(&self.url)
+            .header(USER_AGENT, "Mozilla/5.0")
+            .send()?
+            .text()?;
 
+        let document = Html::parse_document(&body);
         let month_selector = Selector::parse(".month")?;
         let holiday_selector = Selector::parse(".holiday")?;
         let preholiday_selector = Selector::parse("td.preholiday")?;
@@ -88,35 +86,30 @@ impl ProductCalendarParser {
             if let Some(month_element) = table.select(&month_selector).next() {
                 let month_name = month_element.text().collect::<String>().trim().to_string();
                 if let Some(&month_number) = self.months.get(month_name.as_str()) {
-                    calendar.extend(self.collect_days(
-                        table,
-                        &holiday_selector,
-                        month_number,
-                        DayKind::Holiday,
-                        "\u{a0}",
-                    ));
-                    calendar.extend(self.collect_days(
-                        table,
-                        &preholiday_selector,
-                        month_number,
-                        DayKind::Preholiday,
-                        "*\u{a0}",
-                    ));
-                    calendar.extend(self.collect_days(
-                        table,
-                        &work_selector,
-                        month_number,
-                        DayKind::Work,
-                        "\u{a0}",
-                    ));
+                    let day_types = [
+                        (&holiday_selector, DayKind::Holiday, "\u{a0}"),
+                        (&preholiday_selector, DayKind::Preholiday, "*\u{a0}"),
+                        (&work_selector, DayKind::Work, "\u{a0}"),
+                    ];
+
+                    for (selector, kind, replace) in &day_types {
+                        calendar.extend(self.collect_days(
+                            table,
+                            selector,
+                            month_number,
+                            *kind,
+                            replace,
+                        ));
+                    }
                 }
             }
         }
         Ok(calendar)
     }
 
+    #[inline]
     fn to_date(&self, day: String, month: u8) -> Option<NaiveDate> {
-        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse().ok()?)
+        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse::<u32>().ok()?)
     }
 }
 
