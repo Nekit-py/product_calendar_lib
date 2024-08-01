@@ -1,4 +1,5 @@
 use crate::day::{kind::DayKind, Day};
+use crate::errors::ProductCalendarError;
 use chrono::NaiveDate;
 use reqwest::blocking::Client;
 use reqwest::header::USER_AGENT;
@@ -68,11 +69,18 @@ impl ProductCalendarParser {
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
         let client = Client::new();
-        let body = client
+        let response = client
             .get(&self.url)
             .header(USER_AGENT, "Mozilla/5.0")
-            .send()?
-            .text()?;
+            .send()?;
+
+        if response.status().is_client_error() {
+            return Err(Box::new(ProductCalendarError::InvalidYear(
+                self.year.to_string(),
+            )));
+        };
+
+        let body = response.text()?;
 
         let document = Html::parse_document(&body);
         let month_selector = Selector::parse(".month")?;
@@ -127,5 +135,21 @@ mod tests {
         expected_day.set_kind(super::DayKind::Holiday);
 
         assert_eq!(parsed_calendar[0], expected_day);
+    }
+
+    #[test]
+    fn test_invalid_year() {
+        let invalid_year = 1899_u16;
+        let mut parser = super::ProductCalendarParser::new(invalid_year);
+        let calendar = parser.parse_calendar();
+        assert_eq!(calendar.is_err(), true);
+    }
+
+    #[test]
+    fn test_invalid_year_2() {
+        let invalid_year = 2055_u16;
+        let mut parser = super::ProductCalendarParser::new(invalid_year);
+        let calendar = parser.parse_calendar();
+        assert_eq!(calendar.is_err(), true);
     }
 }

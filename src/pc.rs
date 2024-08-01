@@ -255,15 +255,10 @@ impl ProductCalendar {
     }
 }
 
-fn validate_year(year: Option<u16>) -> Result<u16, ProductCalendarError> {
-    let current_year = Local::now().year() as u16;
-    Ok(year.unwrap_or_else(|| current_year))
-}
-
 pub fn get_product_calendar(
     year: Option<u16>,
 ) -> Result<ProductCalendar, Box<dyn std::error::Error>> {
-    let year = validate_year(year)?;
+    let year = year.unwrap_or(Local::now().year() as u16);
 
     let mut parser = ProductCalendarParser::new(year);
 
@@ -328,6 +323,18 @@ mod tests {
         d.set_kind(DayKind::Preholiday);
         let test_day = pc
             .info_by_date(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap())
+            .unwrap();
+        assert_eq!(d, test_day);
+    }
+
+    #[test]
+    fn test_info_by_day_2() {
+        let year = Some(2025);
+        let pc = get_product_calendar(year).unwrap();
+        let mut d = Day::new(NaiveDate::from_ymd_opt(2025, 2, 22).unwrap());
+        d.set_kind(DayKind::Weekend);
+        let test_day = pc
+            .info_by_date(NaiveDate::from_ymd_opt(2025, 2, 22).unwrap())
             .unwrap();
         assert_eq!(d, test_day);
     }
