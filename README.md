@@ -7,6 +7,7 @@
 
 ## Функционал
 1. Выгрузка всего года: Получение производственного календаря на весь год.
+> Объект ProductCalendar кэшируется в рамках одной сессии прораммы.
 2. Выгрузка за период (N календарных дней): Получение календаря с начальной даты на заданное количество календарных дней.
 3. Выгрузка за период (N рабочих дней): Получение календаря с начальной даты на заданное количество рабочих дней.
 4. Выгрузка за период (начальная дата - конечная дата): Получение календаря за указанный диапазон дат.
@@ -47,16 +48,6 @@ maturin build --release --interpreter 3.10
 
 Более подробно на https://github.com/pyo3/maturin
 
-
-
-### Установка с https://www.pypi.org
-
-1. Скачайте wheel file c https://pypi.org/project/product_calendar_lib/
-
-2. Установите
-```console
-pip install product_calendar-0.1.0-cp312-cp312-macosx_11_0_arm64.whl
-```
 
 ## Использование
 ### Основые типы
@@ -133,19 +124,19 @@ print(yearly_calendar)
 
 ### Выгрузка за период (N календарных дней)
 ```python
-calendar_period = calendar.period_by_number_of_days(date(2024-05-01), 10)
+calendar_period = calendar.period_by_number_of_days(date(2024, 5, 1), 10)
 print(calendar_period)
 ```
 
  ### Выгрузка за период (N рабочих дней)
 ```python
-calendar_period_working_days = calendar.period_by_number_of_work_days(date(2024-05-01), 10)
+calendar_period_working_days = calendar.period_by_number_of_work_days(date(2024, 5, 1), 10)
 print(calendar_period_working_days)
 ```
 
  ### Выгрузка за период (начальная дата - конечная дата)
 ```python
-calendar_period = calendar.period_slice(date(2024-05-01), date(2024-05-30))
+calendar_period = calendar.period_slice(date(2024, 5, 1), date(2024, 5, 30))
 print(calendar_period)
 ```
 
@@ -181,7 +172,7 @@ print(desired_day)
 
 
 ### Вклад
-Мы приветствуем вклад в проект! Пожалуйста, выполните следующие шаги для внесения изменений:
+Я приветствую вклад в проект! Пожалуйста, выполните следующие шаги для внесения изменений:
 
 Сделайте форк репозитория.
 Создайте новую ветку для вашей функции или исправления ошибки.
@@ -192,7 +183,7 @@ print(desired_day)
 Этот проект лицензирован по лицензии MIT. См. файл LICENSE для подробностей.
 
 ### Контакты
-По вопросам или для поддержки свяжитесь с нами по адресу nekit-sns@yandex.ru
+По вопросам или для поддержки свяжитесь со мной по адресу nekit-sns@yandex.ru
 
 
 

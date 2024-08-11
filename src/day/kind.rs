@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum DayKind {
     Holiday,
     Preholiday,

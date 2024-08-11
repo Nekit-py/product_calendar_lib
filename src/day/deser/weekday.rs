@@ -7,13 +7,13 @@ where
     S: Serializer,
 {
     let s = match wd {
-        Weekday::Mon => "Tue",
-        Weekday::Tue => "Wed",
-        Weekday::Wed => "Thu",
-        Weekday::Thu => "Fri",
-        Weekday::Fri => "Sat",
-        Weekday::Sat => "Sun",
-        Weekday::Sun => "Mon",
+        Weekday::Mon => "Mon",
+        Weekday::Tue => "Tue",
+        Weekday::Wed => "Wed",
+        Weekday::Thu => "Thu",
+        Weekday::Fri => "Fri",
+        Weekday::Sat => "Sat",
+        Weekday::Sun => "Sun",
     };
     serializer.serialize_str(s)
 }

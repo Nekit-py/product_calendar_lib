@@ -1,4 +1,5 @@
 use crate::day::{kind::DayKind, Day};
+use crate::errors::ProductCalendarError;
 use chrono::NaiveDate;
 use reqwest::blocking::Client;
 use reqwest::header::USER_AGENT;
@@ -24,7 +25,7 @@ const MONTHS: [&str; 12] = [
 #[derive(Debug)]
 pub struct ProductCalendarParser {
     months: HashMap<&'static str, u8>,
-    pub year: u16,
+    year: u16,
     url: String,
 }
 
@@ -58,7 +59,7 @@ impl ProductCalendarParser {
                     self.to_date(day_text.replace(replace_chars, ""), month_number)
                         .map(|date| {
                             let mut day = Day::new(date);
-                            day.kind = day_kind;
+                            day.set_kind(day_kind);
                             day
                         })
                 })
@@ -68,53 +69,55 @@ impl ProductCalendarParser {
 
     pub fn parse_calendar(&mut self) -> Result<Vec<Day>, Box<dyn std::error::Error>> {
         let client = Client::new();
-        let resp = client
+        let response = client
             .get(&self.url)
             .header(USER_AGENT, "Mozilla/5.0")
             .send()?;
-        let body = resp.text()?;
+
+        if response.status().is_client_error() {
+            return Err(Box::new(ProductCalendarError::InvalidYear(
+                self.year.to_string(),
+            )));
+        };
+
+        let body = response.text()?;
+
         let document = Html::parse_document(&body);
-
-        let mut calendar = Vec::with_capacity(30);
-
         let month_selector = Selector::parse(".month")?;
         let holiday_selector = Selector::parse(".holiday")?;
         let preholiday_selector = Selector::parse("td.preholiday")?;
         let work_selector = Selector::parse("td.work")?;
 
+        let mut calendar = Vec::with_capacity(30);
+
         for table in document.select(&Selector::parse("table")?) {
             if let Some(month_element) = table.select(&month_selector).next() {
                 let month_name = month_element.text().collect::<String>().trim().to_string();
                 if let Some(&month_number) = self.months.get(month_name.as_str()) {
-                    calendar.extend(self.collect_days(
-                        table,
-                        &holiday_selector,
-                        month_number,
-                        DayKind::Holiday,
-                        "\u{a0}",
-                    ));
-                    calendar.extend(self.collect_days(
-                        table,
-                        &preholiday_selector,
-                        month_number,
-                        DayKind::Preholiday,
-                        "*\u{a0}",
-                    ));
-                    calendar.extend(self.collect_days(
-                        table,
-                        &work_selector,
-                        month_number,
-                        DayKind::Work,
-                        "\u{a0}",
-                    ));
+                    let day_types = [
+                        (&holiday_selector, DayKind::Holiday, "\u{a0}"),
+                        (&preholiday_selector, DayKind::Preholiday, "*\u{a0}"),
+                        (&work_selector, DayKind::Work, "\u{a0}"),
+                    ];
+
+                    for (selector, kind, replace) in &day_types {
+                        calendar.extend(self.collect_days(
+                            table,
+                            selector,
+                            month_number,
+                            *kind,
+                            replace,
+                        ));
+                    }
                 }
             }
         }
         Ok(calendar)
     }
 
+    #[inline]
     fn to_date(&self, day: String, month: u8) -> Option<NaiveDate> {
-        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse().ok()?)
+        NaiveDate::from_ymd_opt(self.year as i32, month as u32, day.parse::<u32>().ok()?)
     }
 }
 
@@ -123,13 +126,30 @@ mod tests {
     #[test]
     fn test_parse_calendar() {
         let mut parser = super::ProductCalendarParser::new(2024);
-        if let Ok(cal) = parser.parse_calendar() {
-            let d1 = super::Day {
-                weekday: chrono::Weekday::Mon,
-                day: chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                kind: super::DayKind::Holiday,
-            };
-            assert_eq!(cal[0], d1);
-        }
+        let parsed_calendar = parser
+            .parse_calendar()
+            .expect("Не удалось распарсить календарь");
+
+        let mut expected_day =
+            super::Day::new(chrono::NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        expected_day.set_kind(super::DayKind::Holiday);
+
+        assert_eq!(parsed_calendar[0], expected_day);
+    }
+
+    #[test]
+    fn test_invalid_year() {
+        let invalid_year = 1899_u16;
+        let mut parser = super::ProductCalendarParser::new(invalid_year);
+        let calendar = parser.parse_calendar();
+        assert_eq!(calendar.is_err(), true);
+    }
+
+    #[test]
+    fn test_invalid_year_2() {
+        let invalid_year = 2055_u16;
+        let mut parser = super::ProductCalendarParser::new(invalid_year);
+        let calendar = parser.parse_calendar();
+        assert_eq!(calendar.is_err(), true);
     }
 }
