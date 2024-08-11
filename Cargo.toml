@@ -7,6 +7,7 @@ edition = "2021"
 
 [lib]
 name = "product_calendar"
+crate-type = ["lib"]
 
 [dependencies]
 chrono = "0.4.38"
