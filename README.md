@@ -128,25 +128,25 @@ calendar_period = calendar.period_by_number_of_days(date(2024, 5, 1), 10)
 print(calendar_period)
 ```
 
- ### Выгрузка за период (N рабочих дней)
+### Выгрузка за период (N рабочих дней)
 ```python
 calendar_period_working_days = calendar.period_by_number_of_work_days(date(2024, 5, 1), 10)
 print(calendar_period_working_days)
 ```
 
- ### Выгрузка за период (начальная дата - конечная дата)
+### Выгрузка за период (начальная дата - конечная дата)
 ```python
 calendar_period = calendar.period_slice(date(2024, 5, 1), date(2024, 5, 30))
 print(calendar_period)
 ```
 
- ### Статистика за период
+### Статистика за период
 ```python
 period_statistic = calendar.statistic()
 print(period_statistic)
 ```
 
- ### Разбивка по кварталам
+### Разбивка по кварталам
 ```python
 third_quarter = calendar.extract_days_in_quarter(3)
 print(third_quarter)
@@ -157,14 +157,14 @@ desired_day = calendar.after_nth_weeks(3)
 print(desired_day)
 ```
 
- ### Всего рабочих часов за период
+### Всего рабочих часов за период
 ```python
 third_quarter = calendar.extract_days_in_quarter(3)
 third_quarter_statistic = third_quarter.statistic()
 print(third_quarter_statistic.work_hours())
 ```
 
- ### Следующий рабочий день
+### Следующий рабочий день
 ```python
 desired_work_day = calendar.next_work_day(date(2024,1,1))
 print(desired_day)
