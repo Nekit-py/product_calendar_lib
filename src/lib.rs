@@ -16,7 +16,6 @@ use pyo3::pyclass::CompareOp;
 use pyo3::types::{IntoPyDict, PyDict};
 use statistic::Statistic as RustStatistic;
 use std::str::FromStr;
-use std::usize;
 
 #[pyclass]
 pub struct ProductCalendar(RustProductCalendar);
@@ -71,6 +70,23 @@ impl ProductCalendar {
     fn info_by_date(&self, date: NaiveDate) -> PyResult<Option<Day>> {
         match self.0.info_by_date(date) {
             Some(d) => Ok(Some(Day(d))),
+            None => Ok(None),
+        }
+    }
+
+    /// Возвращает последний день текущего периода
+    ///
+    /// # Пример
+    /// ```
+    /// from product_calendar import ProductCalendar
+    ///
+    ///
+    /// calendar = ProductCalendar(2024)
+    /// print(calendar.last())
+    /// ```
+    fn last(&self) -> PyResult<Option<Day>> {
+        match self.0.last() {
+            Some(d) => Ok(Some(Day(d.clone()))),
             None => Ok(None),
         }
     }

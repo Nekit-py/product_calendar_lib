@@ -11,6 +11,7 @@ lazy_static! {
     static ref CACHED_CALENDAR: Mutex<HashMap<u16, ProductCalendar>> = Mutex::new(HashMap::new());
 }
 
+//TODO: Написать трейт для календаря и сделать структуру для нескольких лет
 #[derive(Clone, Debug)]
 pub struct ProductCalendar {
     pub calendar: Vec<Day>,
@@ -77,6 +78,63 @@ impl ProductCalendar {
         }
 
         Ok(self.calendar[end_idx].clone())
+    }
+
+    //TODO: Написать для либы
+    pub fn last(&self) -> Option<&Day> {
+        self.calendar.last()
+    }
+
+    //TODO: Написать для либы
+    pub fn first(&self) -> Option<&Day> {
+        self.calendar.first()
+    }
+
+    //TODO: Написать тест
+    pub fn extend_forward(self, days: usize) -> Result<Self, ProductCalendarError> {
+        let first = self.first().unwrap().get_date();
+        let year = first.year() as u16;
+
+        let cached_calendar = CACHED_CALENDAR.lock().unwrap();
+        let cached_pc = cached_calendar.get(&year).unwrap();
+
+        let move_on = self.calendar.len() + days;
+        if move_on > cached_pc.calendar.len() {
+            return Err(ProductCalendarError::DateOutOfRange(move_on.to_string()));
+        }
+
+        cached_pc.period_by_number_of_days(first, move_on)
+    }
+
+    //TODO: Реализовать + написать тест
+    pub fn extend_backward(self, days: usize) -> Result<Self, ProductCalendarError> {
+        let last_day = self.last().unwrap();
+        let first_day = self.first().unwrap();
+        let last_date = last_day.get_date();
+        let year = last_date.year() as u16;
+
+        let cached_calendar = CACHED_CALENDAR.lock().unwrap();
+        let mut calendar = cached_calendar.get(&year).unwrap().calendar.clone();
+        calendar.retain(|d| last_day >= d);
+
+        let mut start_idx = 0usize;
+        for (idx, d) in calendar.iter().enumerate() {
+            if d == first_day {
+                start_idx = idx - days;
+                match idx.checked_sub(days) {
+                    Some(dif) => start_idx = dif,
+                    None => return Err(ProductCalendarError::DateOutOfRange(0.to_string())),
+                }
+                break;
+            }
+        }
+
+        let cal_res: Vec<Day> = {
+            let cal_slice = &calendar[start_idx..];
+            cal_slice.to_vec()
+        };
+
+        Ok(ProductCalendar { calendar: cal_res })
     }
 
     pub fn new(year: u16) -> ProductCalendar {
@@ -281,18 +339,66 @@ mod tests {
     use super::*;
     use chrono::NaiveDate;
 
+    fn create_day(year: i32, month: u32, day: u32, kind: Option<DayKind>) -> Day {
+        let mut day_instance = Day::new(NaiveDate::from_ymd_opt(year, month, day).unwrap());
+        if let Some(k) = kind {
+            day_instance.set_kind(k);
+        }
+        day_instance
+    }
+
+    fn get_product_calendar_for_year(year: Option<u16>) -> ProductCalendar {
+        get_product_calendar(year).unwrap()
+    }
+
+    fn _create_period() -> ProductCalendar {
+        let pc = {
+            let _pc = get_product_calendar(Some(2024));
+            let start = NaiveDate::from_ymd_opt(2024, 09, 01).unwrap();
+            let end = NaiveDate::from_ymd_opt(2024, 09, 30).unwrap();
+            _pc.expect("Не удалось получить календарь...")
+                .period_slice(start, end)
+                .unwrap()
+        };
+        pc
+    }
+
+    #[test]
+    fn test_extend_forward() {
+        let pc_period = _create_period();
+        let extended = pc_period.extend_forward(30);
+        let day = create_day(2024, 10, 30, Some(DayKind::Work));
+        assert_eq!(
+            extended
+                .unwrap()
+                .last()
+                .expect("Не поулчили послединй день в тесте"),
+            &day
+        );
+    }
+
+    #[test]
+    fn test_extend_backward() {
+        let pc_period = _create_period();
+        let extended = pc_period.extend_backward(30);
+        let day = create_day(2024, 8, 2, Some(DayKind::Work));
+        assert_eq!(
+            extended
+                .unwrap()
+                .first()
+                .expect("Не поулчили послединй день в тесте"),
+            &day
+        );
+    }
+
     #[test]
     fn test_period_by_number_of_days() {
-        let year = Some(2024);
-        let pc = get_product_calendar(year).unwrap();
-
-        let expected = {
-            let d1 = Day::new(NaiveDate::from_ymd_opt(2024, 5, 6).unwrap());
-            let d2 = Day::new(NaiveDate::from_ymd_opt(2024, 5, 7).unwrap());
-            let mut d3 = Day::new(NaiveDate::from_ymd_opt(2024, 5, 8).unwrap());
-            d3.set_kind(DayKind::Preholiday);
-            vec![d1, d2, d3]
-        };
+        let pc = get_product_calendar_for_year(Some(2024));
+        let expected = vec![
+            create_day(2024, 5, 6, None),
+            create_day(2024, 5, 7, None),
+            create_day(2024, 5, 8, Some(DayKind::Preholiday)),
+        ];
 
         assert_eq!(
             pc.period_by_number_of_days(NaiveDate::from_ymd_opt(2024, 5, 6).unwrap(), 3)
@@ -304,8 +410,7 @@ mod tests {
 
     #[test]
     fn test_statistic() {
-        let year = Some(2024);
-        let pc = get_product_calendar(year).unwrap();
+        let pc = get_product_calendar_for_year(Some(2024));
         let expected = Statistic {
             holidays: 17,
             work_days: 243,
@@ -316,41 +421,49 @@ mod tests {
     }
 
     #[test]
+    fn test_last() {
+        let pc = get_product_calendar_for_year(Some(2024));
+        let expected_day = create_day(2024, 12, 31, Some(DayKind::Holiday));
+        assert_eq!(pc.last(), Some(&expected_day));
+    }
+
+    #[test]
+    fn test_first() {
+        let pc = get_product_calendar_for_year(Some(2024));
+        let expected_day = create_day(2024, 1, 1, Some(DayKind::Holiday));
+        assert_eq!(pc.first(), Some(&expected_day));
+    }
+
+    #[test]
     fn test_info_by_day() {
-        let year = Some(2024);
-        let pc = get_product_calendar(year).unwrap();
-        let mut d = Day::new(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap());
-        d.set_kind(DayKind::Preholiday);
+        let pc = get_product_calendar_for_year(Some(2024));
+        let expected_day = create_day(2024, 6, 11, Some(DayKind::Preholiday));
         let test_day = pc
             .info_by_date(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap())
             .unwrap();
-        assert_eq!(d, test_day);
+        assert_eq!(expected_day, test_day);
     }
 
     #[test]
     fn test_info_by_day_2() {
-        let year = Some(2025);
-        let pc = get_product_calendar(year).unwrap();
-        let mut d = Day::new(NaiveDate::from_ymd_opt(2025, 2, 22).unwrap());
-        d.set_kind(DayKind::Weekend);
+        let pc = get_product_calendar_for_year(Some(2025));
+        let expected_day = create_day(2025, 2, 22, Some(DayKind::Weekend));
         let test_day = pc
             .info_by_date(NaiveDate::from_ymd_opt(2025, 2, 22).unwrap())
             .unwrap();
-        assert_eq!(d, test_day);
+        assert_eq!(expected_day, test_day);
     }
 
     #[test]
     fn test_period_by_number_of_work_days() {
-        let year = Some(2024);
-        let pc = get_product_calendar(year).unwrap();
+        let pc = get_product_calendar_for_year(Some(2024));
 
-        let mut d1 = Day::new(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap());
-        d1.set_kind(DayKind::Preholiday);
-        let mut d2 = Day::new(NaiveDate::from_ymd_opt(2024, 6, 12).unwrap());
-        d2.set_kind(DayKind::Holiday);
-        let d3 = Day::new(NaiveDate::from_ymd_opt(2024, 6, 13).unwrap());
+        let expected = vec![
+            create_day(2024, 6, 11, Some(DayKind::Preholiday)),
+            create_day(2024, 6, 12, Some(DayKind::Holiday)),
+            create_day(2024, 6, 13, None),
+        ];
 
-        let expected = vec![d1, d2, d3];
         assert_eq!(
             expected,
             pc.period_by_number_of_work_days(NaiveDate::from_ymd_opt(2024, 6, 11).unwrap(), 2)

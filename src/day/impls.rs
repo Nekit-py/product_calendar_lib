@@ -1,5 +1,6 @@
 use super::Day;
 use std::cmp::PartialEq;
+use std::cmp::{Ord, Ordering, PartialOrd};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -26,5 +27,17 @@ impl fmt::Display for Day {
 impl PartialEq for Day {
     fn eq(&self, other: &Self) -> bool {
         self.day == other.day && self.kind == other.kind && self.weekday == other.weekday
+    }
+}
+
+impl PartialOrd for Day {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Day {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.day.cmp(&other.day)
     }
 }

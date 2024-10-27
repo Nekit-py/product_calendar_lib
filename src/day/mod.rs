@@ -8,6 +8,7 @@ use chrono::{Datelike, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
 
+//TODO: Добавить порядковый номер в году?
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Day {
     #[serde(with = "weekday")]
@@ -29,6 +30,10 @@ impl Day {
 
     pub fn get_date(&self) -> NaiveDate {
         self.day
+    }
+
+    pub fn get_year(&self) -> i32 {
+        self.day.year()
     }
 
     pub fn get_weekday(&self) -> Weekday {
@@ -54,6 +59,13 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2024, 5, 6).unwrap();
         let d = Day::new(date);
         assert_eq!(d.get_date(), date);
+    }
+
+    #[test]
+    fn test_get_year() {
+        let date = NaiveDate::from_ymd_opt(2024, 5, 6).unwrap();
+        let d = Day::new(date);
+        assert_eq!(d.get_year(), 2024);
     }
 
     #[test]
