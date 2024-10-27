@@ -52,6 +52,12 @@ maturin build --release --interpreter 3.10
 
 Более подробно на https://github.com/pyo3/maturin
 
+4. Скачать для MacOs (arm64)
+[Python 3.10](https://github.com/Nekit-py/product_calendar_lib/tree/dev/wheels/product_calendar-0.2.0-cp310-cp310-macosx_11_0_arm64.whl)
+[Python 3.11](https://github.com/Nekit-py/product_calendar_lib/tree/dev/wheels/product_calendar-0.2.0-cp310-cp311-macosx_11_0_arm64.whl)
+[Python 3.12](https://github.com/Nekit-py/product_calendar_lib/tree/dev/wheels/product_calendar-0.2.0-cp310-cp312-macosx_11_0_arm64.whl)
+[Python 3.13](https://github.com/Nekit-py/product_calendar_lib/tree/dev/wheels/product_calendar-0.2.0-cp310-cp313-macosx_11_0_arm64.whl)
+
 
 ## Использование
 ### Основые типы
