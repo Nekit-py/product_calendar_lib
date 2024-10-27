@@ -1,6 +1,6 @@
 [package]
 name = "product_calendar"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and thcrate-type = ["cdylib"]
@@ -10,7 +10,6 @@ name = "product_calendar"
 crate-type = ["cdylib"]
 
 [dependencies.pyo3]
-#version = "0.21.2"
 version = "0.22.2"
 features = ["extension-module", "chrono"]
 

@@ -90,6 +90,23 @@ impl ProductCalendar {
             None => Ok(None),
         }
     }
+    ///
+    /// Возвращает первый день текущего периода
+    ///
+    /// # Пример
+    /// ```
+    /// from product_calendar import ProductCalendar
+    ///
+    ///
+    /// calendar = ProductCalendar(2024)
+    /// print(calendar.first())
+    /// ```
+    fn first(&self) -> PyResult<Option<Day>> {
+        match self.0.first() {
+            Some(d) => Ok(Some(Day(d.clone()))),
+            None => Ok(None),
+        }
+    }
 
     /// Возвращает календарь за указанный период начиная с даты и длиной в количество дней.
     ///
@@ -98,6 +115,28 @@ impl ProductCalendar {
     /// * `days` - Количество дней.
     fn period_by_number_of_days(&self, date: NaiveDate, days: usize) -> PyResult<Self> {
         match self.0.period_by_number_of_days(date, days) {
+            Ok(rpc) => Ok(Self(rpc)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    /// Расшираяет календарь на переданное кол-во дней с конца
+    ///
+    /// # Аргументы
+    /// * `days` - Количество дней.
+    fn extend_forward(&mut self, days: usize) -> PyResult<Self> {
+        match self.0.clone().extend_forward(days) {
+            Ok(rpc) => Ok(Self(rpc)),
+            Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
+        }
+    }
+
+    /// Расшираяет календарь на переданное кол-во дней с начала
+    ///
+    /// # Аргументы
+    /// * `days` - Количество дней.
+    fn extend_backward(&mut self, days: usize) -> PyResult<Self> {
+        match self.0.clone().extend_backward(days) {
             Ok(rpc) => Ok(Self(rpc)),
             Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }

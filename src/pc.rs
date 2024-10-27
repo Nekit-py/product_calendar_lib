@@ -80,61 +80,80 @@ impl ProductCalendar {
         Ok(self.calendar[end_idx].clone())
     }
 
-    //TODO: Написать для либы
     pub fn last(&self) -> Option<&Day> {
         self.calendar.last()
     }
 
-    //TODO: Написать для либы
     pub fn first(&self) -> Option<&Day> {
         self.calendar.first()
     }
 
-    //TODO: Написать тест
     pub fn extend_forward(self, days: usize) -> Result<Self, ProductCalendarError> {
-        let first = self.first().unwrap().get_date();
-        let year = first.year() as u16;
+        let first_day = self
+            .first()
+            .ok_or(ProductCalendarError::DateOutOfRange(
+                "Первый день не найден".to_string(),
+            ))?
+            .get_date();
+
+        let year = first_day.year() as u16;
 
         let cached_calendar = CACHED_CALENDAR.lock().unwrap();
-        let cached_pc = cached_calendar.get(&year).unwrap();
+        let cached_pc = cached_calendar
+            .get(&year)
+            .ok_or(ProductCalendarError::DateOutOfRange(
+                "Календарь не найден".to_string(),
+            ))?;
 
-        let move_on = self.calendar.len() + days;
+        let move_on =
+            self.calendar
+                .len()
+                .checked_add(days)
+                .ok_or(ProductCalendarError::DateOutOfRange(
+                    "Индекс выходит за пределы календаря".to_string(),
+                ))?;
+
         if move_on > cached_pc.calendar.len() {
-            return Err(ProductCalendarError::DateOutOfRange(move_on.to_string()));
+            return Err(ProductCalendarError::DateOutOfRange(format!(
+            "Невозможно продвинуться вперед на {} дней; превышает длину календаря.",
+            days
+        )));
         }
 
-        cached_pc.period_by_number_of_days(first, move_on)
+        cached_pc.period_by_number_of_days(first_day, move_on)
     }
 
-    //TODO: Реализовать + написать тест
     pub fn extend_backward(self, days: usize) -> Result<Self, ProductCalendarError> {
-        let last_day = self.last().unwrap();
-        let first_day = self.first().unwrap();
+        let last_day = self.last().ok_or(ProductCalendarError::DateOutOfRange(
+            "Последний день не найден".to_string(),
+        ))?;
+
+        let first_day = self.first().ok_or(ProductCalendarError::DateOutOfRange(
+            "Первый день не найден".to_string(),
+        ))?;
+
         let last_date = last_day.get_date();
         let year = last_date.year() as u16;
 
         let cached_calendar = CACHED_CALENDAR.lock().unwrap();
         let mut calendar = cached_calendar.get(&year).unwrap().calendar.clone();
+
         calendar.retain(|d| last_day >= d);
 
-        let mut start_idx = 0usize;
-        for (idx, d) in calendar.iter().enumerate() {
-            if d == first_day {
-                start_idx = idx - days;
-                match idx.checked_sub(days) {
-                    Some(dif) => start_idx = dif,
-                    None => return Err(ProductCalendarError::DateOutOfRange(0.to_string())),
-                }
-                break;
-            }
-        }
+        let start_idx = calendar.iter().position(|d| d == first_day).ok_or(
+            ProductCalendarError::DateOutOfRange("First day not found in calendar".to_string()),
+        )?;
 
-        let cal_res: Vec<Day> = {
-            let cal_slice = &calendar[start_idx..];
-            cal_slice.to_vec()
-        };
+        let start_idx = start_idx
+            .checked_sub(days)
+            .ok_or(ProductCalendarError::DateOutOfRange(format!(
+                "Cannot extend backward by {} days",
+                days
+            )))?;
 
-        Ok(ProductCalendar { calendar: cal_res })
+        Ok(ProductCalendar {
+            calendar: calendar[start_idx..].to_vec(),
+        })
     }
 
     pub fn new(year: u16) -> ProductCalendar {
