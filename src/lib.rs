@@ -318,6 +318,10 @@ impl Day {
         }
     }
 
+    fn ordinal(&self) -> PyResult<u32> {
+        Ok(self.0.ordinal())
+    }
+
     #[getter]
     fn weekday(&self) -> PyResult<String> {
         Ok(self.0.get_weekday().to_string())

@@ -32,6 +32,11 @@ impl Day {
         self.day
     }
 
+    #[inline]
+    pub fn ordinal(&self) -> u32 {
+        self.day.ordinal()
+    }
+
     pub fn get_year(&self) -> i32 {
         self.day.year()
     }

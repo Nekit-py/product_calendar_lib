@@ -66,6 +66,9 @@ class Day:
     def as_dict(self) -> dict[str, str]:
         ...
 
+    def ordinal(self) -> int:
+        ...
+
 
 class Statistic:
     def __init__(self, holidays: int, work_days: int, weekends: int, preholidays: int)):
