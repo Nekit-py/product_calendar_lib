@@ -2,6 +2,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProductCalendarError {
+    #[error("{0}")]
+    CantFindDay(String),
+    #[error("{0}")]
+    ShiftError(String),
     #[error("Данные на `{0}` год недоступны.")]
     InvalidYear(String),
     #[error("Дата `{0}` находится вне диапазона текущего производственного календаря.")]

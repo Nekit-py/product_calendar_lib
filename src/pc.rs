@@ -91,7 +91,7 @@ impl ProductCalendar {
     pub fn extend_forward(self, days: usize) -> Result<Self, ProductCalendarError> {
         let first_day = self
             .first()
-            .ok_or(ProductCalendarError::DateOutOfRange(
+            .ok_or(ProductCalendarError::CantFindDay(
                 "Первый день не найден".to_string(),
             ))?
             .get_date();
@@ -101,7 +101,7 @@ impl ProductCalendar {
         let cached_calendar = CACHED_CALENDAR.lock().unwrap();
         let cached_pc = cached_calendar
             .get(&year)
-            .ok_or(ProductCalendarError::DateOutOfRange(
+            .ok_or(ProductCalendarError::CantFindDay(
                 "Календарь не найден".to_string(),
             ))?;
 
@@ -109,26 +109,26 @@ impl ProductCalendar {
             self.calendar
                 .len()
                 .checked_add(days)
-                .ok_or(ProductCalendarError::DateOutOfRange(
+                .ok_or(ProductCalendarError::ShiftError(
                     "Индекс выходит за пределы календаря".to_string(),
                 ))?;
 
         if move_on > cached_pc.calendar.len() {
-            return Err(ProductCalendarError::DateOutOfRange(format!(
-            "Невозможно продвинуться вперед на {} дней; превышает длину календаря.",
-            days
-        )));
+            return Err(ProductCalendarError::ShiftError(format!(
+                "Невозможно продвинуться вперед на {} дней; превышает длину календаря.",
+                days
+            )));
         }
 
         cached_pc.period_by_number_of_days(first_day, move_on)
     }
 
     pub fn extend_backward(self, days: usize) -> Result<Self, ProductCalendarError> {
-        let last_day = self.last().ok_or(ProductCalendarError::DateOutOfRange(
+        let last_day = self.last().ok_or(ProductCalendarError::CantFindDay(
             "Последний день не найден".to_string(),
         ))?;
 
-        let first_day = self.first().ok_or(ProductCalendarError::DateOutOfRange(
+        let first_day = self.first().ok_or(ProductCalendarError::CantFindDay(
             "Первый день не найден".to_string(),
         ))?;
 
@@ -141,13 +141,13 @@ impl ProductCalendar {
         calendar.retain(|d| last_day >= d);
 
         let start_idx = calendar.iter().position(|d| d == first_day).ok_or(
-            ProductCalendarError::DateOutOfRange("First day not found in calendar".to_string()),
+            ProductCalendarError::CantFindDay("Первый день не найден.".to_string()),
         )?;
 
         let start_idx = start_idx
             .checked_sub(days)
-            .ok_or(ProductCalendarError::DateOutOfRange(format!(
-                "Cannot extend backward by {} days",
+            .ok_or(ProductCalendarError::ShiftError(format!(
+                "Невозможно продвинуться назад на {} дней; превышает длину календаря.",
                 days
             )))?;
 
