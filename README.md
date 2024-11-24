@@ -127,10 +127,10 @@ class ProductCalendar:
     def first(self):
         ...
 
-    def extend_forward(self, days: int) -> Self:
+    def extend_forward(self, days: int) -> None:
         ...
 
-    def extend_backward(self, days: int) -> Self:
+    def extend_backward(self, days: int) -> None:
         ...
 ```
 
