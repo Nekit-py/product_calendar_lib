@@ -88,16 +88,19 @@ impl ProductCalendar {
         self.calendar.first()
     }
 
-    pub fn extend_forward(self, days: usize) -> Result<Self, ProductCalendarError> {
-        let first_day = self
-            .first()
-            .ok_or(ProductCalendarError::CantFindDay(
-                "Первый день не найден".to_string(),
-            ))?
-            .get_date();
+    pub fn extend_forward(&mut self, days: usize) -> Result<(), ProductCalendarError> {
+        let first_day = self.first().ok_or(ProductCalendarError::ShiftError(
+            "Календарь пуст".to_string(),
+        ))?;
+        //Последний день текущего календаря
+        let last_day = self.last().ok_or(ProductCalendarError::ShiftError(
+            "Календарь пуст".to_string(),
+        ))?;
+        //
+        //Текущий год
+        let year = last_day.get_date().year() as u16;
 
-        let year = first_day.year() as u16;
-
+        //Получаем календарь за текущий год
         let cached_calendar = CACHED_CALENDAR.lock().unwrap();
         let cached_pc = cached_calendar
             .get(&year)
@@ -105,55 +108,46 @@ impl ProductCalendar {
                 "Календарь не найден".to_string(),
             ))?;
 
-        let move_on =
-            self.calendar
-                .len()
-                .checked_add(days)
-                .ok_or(ProductCalendarError::ShiftError(
-                    "Индекс выходит за пределы календаря".to_string(),
-                ))?;
-
-        if move_on > cached_pc.calendar.len() {
+        let target_idx = last_day.ordinal() as usize + days;
+        if target_idx > cached_pc.total_days() {
             return Err(ProductCalendarError::ShiftError(format!(
-                "Невозможно продвинуться вперед на {} дней; превышает длину календаря.",
-                days
+                "Сдвиг превышает {} дней.",
+                cached_pc.total_days(),
             )));
         }
-
-        cached_pc.period_by_number_of_days(first_day, move_on)
+        self.calendar = cached_pc.calendar[first_day.ordinal() as usize..target_idx].to_vec();
+        Ok(())
     }
 
-    pub fn extend_backward(self, days: usize) -> Result<Self, ProductCalendarError> {
-        let last_day = self.last().ok_or(ProductCalendarError::CantFindDay(
-            "Последний день не найден".to_string(),
+    pub fn extend_backward(&mut self, days: usize) -> Result<(), ProductCalendarError> {
+        let first_day = self.first().ok_or(ProductCalendarError::ShiftError(
+            "Календарь пуст".to_string(),
         ))?;
-
-        let first_day = self.first().ok_or(ProductCalendarError::CantFindDay(
-            "Первый день не найден".to_string(),
+        //Последний день текущего календаря
+        let last_day = self.last().ok_or(ProductCalendarError::ShiftError(
+            "Календарь пуст".to_string(),
         ))?;
+        //
+        //Текущий год
+        let year = last_day.get_date().year() as u16;
 
-        let last_date = last_day.get_date();
-        let year = last_date.year() as u16;
-
+        //Получаем календарь за текущий год
         let cached_calendar = CACHED_CALENDAR.lock().unwrap();
-        let mut calendar = cached_calendar.get(&year).unwrap().calendar.clone();
+        let cached_pc = cached_calendar
+            .get(&year)
+            .ok_or(ProductCalendarError::CantFindDay(
+                "Календарь не найден".to_string(),
+            ))?;
 
-        calendar.retain(|d| last_day >= d);
-
-        let start_idx = calendar.iter().position(|d| d == first_day).ok_or(
-            ProductCalendarError::CantFindDay("Первый день не найден.".to_string()),
-        )?;
-
-        let start_idx = start_idx
-            .checked_sub(days)
-            .ok_or(ProductCalendarError::ShiftError(format!(
-                "Невозможно продвинуться назад на {} дней; превышает длину календаря.",
-                days
-            )))?;
-
-        Ok(ProductCalendar {
-            calendar: calendar[start_idx..].to_vec(),
-        })
+        let target_idx = first_day.ordinal() as usize - days - 1;
+        if target_idx < 1 {
+            return Err(ProductCalendarError::ShiftError(format!(
+                "Сдвиг превышает {} дней.",
+                cached_pc.total_days(),
+            )));
+        }
+        self.calendar = cached_pc.calendar[target_idx..last_day.ordinal() as usize].to_vec();
+        Ok(())
     }
 
     pub fn new(year: u16) -> ProductCalendar {
@@ -384,12 +378,11 @@ mod tests {
 
     #[test]
     fn test_extend_forward() {
-        let pc_period = _create_period();
-        let extended = pc_period.extend_forward(30);
+        let mut pc_period = _create_period();
+        pc_period.extend_forward(30).unwrap();
         let day = create_day(2024, 10, 30, Some(DayKind::Work));
         assert_eq!(
-            extended
-                .unwrap()
+            pc_period
                 .last()
                 .expect("Не поулчили послединй день в тесте"),
             &day
@@ -398,12 +391,11 @@ mod tests {
 
     #[test]
     fn test_extend_backward() {
-        let pc_period = _create_period();
-        let extended = pc_period.extend_backward(30);
+        let mut pc_period = _create_period();
+        pc_period.extend_backward(30).unwrap();
         let day = create_day(2024, 8, 2, Some(DayKind::Work));
         assert_eq!(
-            extended
-                .unwrap()
+            pc_period
                 .first()
                 .expect("Не поулчили послединй день в тесте"),
             &day

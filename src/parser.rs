@@ -88,7 +88,7 @@ impl ProductCalendarParser {
         let preholiday_selector = Selector::parse("td.preholiday")?;
         let work_selector = Selector::parse("td.work")?;
 
-        let mut calendar = Vec::with_capacity(30);
+        let mut calendar = Vec::with_capacity(31);
 
         for table in document.select(&Selector::parse("table")?) {
             if let Some(month_element) = table.select(&month_selector).next() {

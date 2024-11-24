@@ -8,7 +8,6 @@ use chrono::{Datelike, NaiveDate, Weekday};
 use serde::{Deserialize, Serialize};
 use std::cmp::Eq;
 
-//TODO: Добавить порядковый номер в году?
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct Day {
     #[serde(with = "weekday")]
@@ -32,7 +31,7 @@ impl Day {
         self.day
     }
 
-    #[inline]
+    //Порядковый номер дня в году где 1 января  = 1
     pub fn ordinal(&self) -> u32 {
         self.day.ordinal()
     }

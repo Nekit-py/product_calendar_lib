@@ -124,9 +124,9 @@ impl ProductCalendar {
     ///
     /// # Аргументы
     /// * `days` - Количество дней.
-    fn extend_forward(&mut self, days: usize) -> PyResult<Self> {
+    fn extend_forward(&mut self, days: usize) -> PyResult<()> {
         match self.0.clone().extend_forward(days) {
-            Ok(rpc) => Ok(Self(rpc)),
+            Ok(_) => Ok(()),
             Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }
     }
@@ -135,9 +135,9 @@ impl ProductCalendar {
     ///
     /// # Аргументы
     /// * `days` - Количество дней.
-    fn extend_backward(&mut self, days: usize) -> PyResult<Self> {
+    fn extend_backward(&mut self, days: usize) -> PyResult<()> {
         match self.0.clone().extend_backward(days) {
-            Ok(rpc) => Ok(Self(rpc)),
+            Ok(_) => Ok(()),
             Err(e) => Err(PyErr::new::<PyValueError, _>(e.to_string())),
         }
     }
